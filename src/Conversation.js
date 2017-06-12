@@ -52,6 +52,7 @@ class Conversation extends React.Component {
       inbound: true,
       reset: false,
       turnOffLoop: props.turnOffLoop,
+      typingMessagesToBeDisplayedCount: 0,
     };
   }
 
@@ -61,7 +62,7 @@ class Conversation extends React.Component {
 
   componentWillReceiveProps(nextProps) {
     const previousMessagesLength =
-    this.state.messagesToBeDisplayed.length + this.state.messages.length - this.state.historicMessages.length;
+    this.state.messagesToBeDisplayed.length + this.state.messages.length + this.state.typingMessagesToBeDisplayedCount - this.state.historicMessages.length;
 
     if (nextProps.messages.length > previousMessagesLength) {
       clearTimeout(this.timeoutId);
@@ -85,6 +86,7 @@ class Conversation extends React.Component {
     const messages = this.state.messages;
     const messagesToBeDisplayed = this.state.messagesToBeDisplayed;
     const reset = this.state.reset;
+    let typingMessagesToBeDisplayedCount = this.state.typingMessagesToBeDisplayedCount;
     if (this.state.messagesToBeDisplayed.length > 0) {
       const message = this.state.messagesToBeDisplayed.shift();
       let isTyping = this.state.isTyping;
@@ -92,6 +94,7 @@ class Conversation extends React.Component {
       if (message.type === 'typing') {
         isTyping = true;
         inbound = message.inbound;
+        typingMessagesToBeDisplayedCount += 1;
       } else {
         messages.push(message);
         isTyping = false;
@@ -107,6 +110,7 @@ class Conversation extends React.Component {
         isTyping,
         inbound,
         reset,
+        typingMessagesToBeDisplayedCount,
       }, onDisplay);
       this.timeoutId = setTimeout(this.showMessage, message.duration || 800);
     } else if (!this.state.turnOffLoop) {
