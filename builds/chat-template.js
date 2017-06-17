@@ -49,7 +49,7 @@ var showChatTemplate =
 
 	var _index = __webpack_require__(1);
 
-	var _reactDom = __webpack_require__(298);
+	var _reactDom = __webpack_require__(305);
 
 	var _reactDom2 = _interopRequireDefault(_reactDom);
 
@@ -83,27 +83,27 @@ var showChatTemplate =
 
 	var _Avatar2 = _interopRequireDefault(_Avatar);
 
-	var _Chat = __webpack_require__(155);
+	var _Chat = __webpack_require__(162);
 
 	var _Chat2 = _interopRequireDefault(_Chat);
 
-	var _Conversation = __webpack_require__(156);
+	var _Conversation = __webpack_require__(163);
 
 	var _Conversation2 = _interopRequireDefault(_Conversation);
 
-	var _ImageLoader = __webpack_require__(297);
+	var _ImageLoader = __webpack_require__(304);
 
 	var _ImageLoader2 = _interopRequireDefault(_ImageLoader);
 
-	var _Message = __webpack_require__(158);
+	var _Message = __webpack_require__(165);
 
 	var _Message2 = _interopRequireDefault(_Message);
 
-	var _MessageContent = __webpack_require__(159);
+	var _MessageContent = __webpack_require__(166);
 
 	var _MessageContent2 = _interopRequireDefault(_MessageContent);
 
-	var _Typing = __webpack_require__(296);
+	var _Typing = __webpack_require__(303);
 
 	var _Typing2 = _interopRequireDefault(_Typing);
 
@@ -145,7 +145,7 @@ var showChatTemplate =
 
 	var _getMuiTheme2 = _interopRequireDefault(_getMuiTheme);
 
-	var _MuiThemeProvider = __webpack_require__(154);
+	var _MuiThemeProvider = __webpack_require__(161);
 
 	var _MuiThemeProvider2 = _interopRequireDefault(_MuiThemeProvider);
 
@@ -461,6 +461,10 @@ var showChatTemplate =
 	process.removeListener = noop;
 	process.removeAllListeners = noop;
 	process.emit = noop;
+	process.prependListener = noop;
+	process.prependOnceListener = noop;
+
+	process.listeners = function (name) { return [] }
 
 	process.binding = function (name) {
 	    throw new Error('process.binding is not supported');
@@ -5121,9 +5125,12 @@ var showChatTemplate =
 
 	// Safari 6 and 6.1 for desktop, iPad, and iPhone are the only browsers that
 	// have WebKitMutationObserver but not un-prefixed MutationObserver.
-	// Must use `global` instead of `window` to work in both frames and web
+	// Must use `global` or `self` instead of `window` to work in both frames and web
 	// workers. `global` is a provision of Browserify, Mr, Mrs, or Mop.
-	var BrowserMutationObserver = global.MutationObserver || global.WebKitMutationObserver;
+
+	/* globals self */
+	var scope = typeof global !== "undefined" ? global : self;
+	var BrowserMutationObserver = scope.MutationObserver || scope.WebKitMutationObserver;
 
 	// MutationObservers are desirable because they have high priority and work
 	// reliably everywhere they are implemented.
@@ -7648,7 +7655,7 @@ var showChatTemplate =
 
 	var _compose2 = _interopRequireDefault(_compose);
 
-	var _typography = __webpack_require__(153);
+	var _typography = __webpack_require__(160);
 
 	var _typography2 = _interopRequireDefault(_typography);
 
@@ -12089,10 +12096,31 @@ var showChatTemplate =
 	      result.linux = t
 	    }
 
+	    function getWindowsVersion (s) {
+	      switch (s) {
+	        case 'NT': return 'NT'
+	        case 'XP': return 'XP'
+	        case 'NT 5.0': return '2000'
+	        case 'NT 5.1': return 'XP'
+	        case 'NT 5.2': return '2003'
+	        case 'NT 6.0': return 'Vista'
+	        case 'NT 6.1': return '7'
+	        case 'NT 6.2': return '8'
+	        case 'NT 6.3': return '8.1'
+	        case 'NT 10.0': return '10'
+	        default: return undefined
+	      }
+	    }
+	    
 	    // OS version extraction
 	    var osVersion = '';
-	    if (result.windowsphone) {
+	    if (result.windows) {
+	      osVersion = getWindowsVersion(getFirstMatch(/Windows ((NT|XP)( \d\d?.\d)?)/i))
+	    } else if (result.windowsphone) {
 	      osVersion = getFirstMatch(/windows phone (?:os)?\s?(\d+(\.\d+)*)/i);
+	    } else if (result.mac) {
+	      osVersion = getFirstMatch(/Mac OS X (\d+([_\.\s]\d+)*)/i);
+	      osVersion = osVersion.replace(/[_\s]/g, '.');
 	    } else if (iosdevice) {
 	      osVersion = getFirstMatch(/os (\d+([_\s]\d+)*) like mac os x/i);
 	      osVersion = osVersion.replace(/[_\s]/g, '.');
@@ -12112,7 +12140,7 @@ var showChatTemplate =
 	    }
 
 	    // device type extraction
-	    var osMajorVersion = osVersion.split('.')[0];
+	    var osMajorVersion = !result.windows && osVersion.split('.')[0];
 	    if (
 	         tablet
 	      || nexusTablet
@@ -13088,18 +13116,19 @@ var showChatTemplate =
 	 * invokes the given functions from right to left.
 	 *
 	 * @static
-	 * @since 0.1.0
+	 * @since 3.0.0
 	 * @memberOf _
 	 * @category Util
-	 * @param {...(Function|Function[])} [funcs] Functions to invoke.
-	 * @returns {Function} Returns the new function.
+	 * @param {...(Function|Function[])} [funcs] The functions to invoke.
+	 * @returns {Function} Returns the new composite function.
+	 * @see _.flow
 	 * @example
 	 *
 	 * function square(n) {
 	 *   return n * n;
 	 * }
 	 *
-	 * var addSquare = _.flowRight(square, _.add);
+	 * var addSquare = _.flowRight([square, _.add]);
 	 * addSquare(1, 2);
 	 * // => 9
 	 */
@@ -13113,24 +13142,20 @@ var showChatTemplate =
 /***/ function(module, exports, __webpack_require__) {
 
 	var LodashWrapper = __webpack_require__(115),
-	    baseFlatten = __webpack_require__(119),
-	    getData = __webpack_require__(131),
-	    getFuncName = __webpack_require__(141),
-	    isArray = __webpack_require__(130),
-	    isLaziable = __webpack_require__(143),
-	    rest = __webpack_require__(148);
+	    flatRest = __webpack_require__(119),
+	    getData = __webpack_require__(149),
+	    getFuncName = __webpack_require__(153),
+	    isArray = __webpack_require__(133),
+	    isLaziable = __webpack_require__(155);
 
-	/** Used as the size to enable large array optimizations. */
-	var LARGE_ARRAY_SIZE = 200;
-
-	/** Used as the `TypeError` message for "Functions" methods. */
+	/** Error message constants. */
 	var FUNC_ERROR_TEXT = 'Expected a function';
 
-	/** Used to compose bitmasks for wrapper metadata. */
-	var CURRY_FLAG = 8,
-	    PARTIAL_FLAG = 32,
-	    ARY_FLAG = 128,
-	    REARG_FLAG = 256;
+	/** Used to compose bitmasks for function metadata. */
+	var WRAP_CURRY_FLAG = 8,
+	    WRAP_PARTIAL_FLAG = 32,
+	    WRAP_ARY_FLAG = 128,
+	    WRAP_REARG_FLAG = 256;
 
 	/**
 	 * Creates a `_.flow` or `_.flowRight` function.
@@ -13140,9 +13165,7 @@ var showChatTemplate =
 	 * @returns {Function} Returns the new flow function.
 	 */
 	function createFlow(fromRight) {
-	  return rest(function(funcs) {
-	    funcs = baseFlatten(funcs, 1);
-
+	  return flatRest(function(funcs) {
 	    var length = funcs.length,
 	        index = length,
 	        prereq = LodashWrapper.prototype.thru;
@@ -13167,7 +13190,7 @@ var showChatTemplate =
 	          data = funcName == 'wrapper' ? getData(func) : undefined;
 
 	      if (data && isLaziable(data[0]) &&
-	            data[1] == (ARY_FLAG | CURRY_FLAG | PARTIAL_FLAG | REARG_FLAG) &&
+	            data[1] == (WRAP_ARY_FLAG | WRAP_CURRY_FLAG | WRAP_PARTIAL_FLAG | WRAP_REARG_FLAG) &&
 	            !data[4].length && data[9] == 1
 	          ) {
 	        wrapper = wrapper[getFuncName(data[0])].apply(wrapper, data[3]);
@@ -13181,8 +13204,7 @@ var showChatTemplate =
 	      var args = arguments,
 	          value = args[0];
 
-	      if (wrapper && args.length == 1 &&
-	          isArray(value) && value.length >= LARGE_ARRAY_SIZE) {
+	      if (wrapper && args.length == 1 && isArray(value)) {
 	        return wrapper.plant(value).value();
 	      }
 	      var index = 0,
@@ -13241,12 +13263,24 @@ var showChatTemplate =
 	 * properties to the created object.
 	 *
 	 * @private
-	 * @param {Object} prototype The object to inherit from.
+	 * @param {Object} proto The object to inherit from.
 	 * @returns {Object} Returns the new object.
 	 */
-	function baseCreate(proto) {
-	  return isObject(proto) ? objectCreate(proto) : {};
-	}
+	var baseCreate = (function() {
+	  function object() {}
+	  return function(proto) {
+	    if (!isObject(proto)) {
+	      return {};
+	    }
+	    if (objectCreate) {
+	      return objectCreate(proto);
+	    }
+	    object.prototype = proto;
+	    var result = new object;
+	    object.prototype = undefined;
+	    return result;
+	  };
+	}());
 
 	module.exports = baseCreate;
 
@@ -13257,7 +13291,7 @@ var showChatTemplate =
 
 	/**
 	 * Checks if `value` is the
-	 * [language type](http://www.ecma-international.org/ecma-262/6.0/#sec-ecmascript-language-types)
+	 * [language type](http://www.ecma-international.org/ecma-262/7.0/#sec-ecmascript-language-types)
 	 * of `Object`. (e.g. arrays, functions, objects, regexes, `new Number(0)`, and `new String('')`)
 	 *
 	 * @static
@@ -13282,7 +13316,7 @@ var showChatTemplate =
 	 */
 	function isObject(value) {
 	  var type = typeof value;
-	  return !!value && (type == 'object' || type == 'function');
+	  return value != null && (type == 'object' || type == 'function');
 	}
 
 	module.exports = isObject;
@@ -13308,8 +13342,58 @@ var showChatTemplate =
 /* 119 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var arrayPush = __webpack_require__(120),
-	    isFlattenable = __webpack_require__(121);
+	var flatten = __webpack_require__(120),
+	    overRest = __webpack_require__(134),
+	    setToString = __webpack_require__(136);
+
+	/**
+	 * A specialized version of `baseRest` which flattens the rest array.
+	 *
+	 * @private
+	 * @param {Function} func The function to apply a rest parameter to.
+	 * @returns {Function} Returns the new function.
+	 */
+	function flatRest(func) {
+	  return setToString(overRest(func, undefined, flatten), func + '');
+	}
+
+	module.exports = flatRest;
+
+
+/***/ },
+/* 120 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var baseFlatten = __webpack_require__(121);
+
+	/**
+	 * Flattens `array` a single level deep.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Array
+	 * @param {Array} array The array to flatten.
+	 * @returns {Array} Returns the new flattened array.
+	 * @example
+	 *
+	 * _.flatten([1, [2, [3, [4]], 5]]);
+	 * // => [1, 2, [3, [4]], 5]
+	 */
+	function flatten(array) {
+	  var length = array == null ? 0 : array.length;
+	  return length ? baseFlatten(array, 1) : [];
+	}
+
+	module.exports = flatten;
+
+
+/***/ },
+/* 121 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var arrayPush = __webpack_require__(122),
+	    isFlattenable = __webpack_require__(123);
 
 	/**
 	 * The base implementation of `_.flatten` with support for restricting flattening.
@@ -13349,7 +13433,7 @@ var showChatTemplate =
 
 
 /***/ },
-/* 120 */
+/* 122 */
 /***/ function(module, exports) {
 
 	/**
@@ -13375,12 +13459,15 @@ var showChatTemplate =
 
 
 /***/ },
-/* 121 */
+/* 123 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isArguments = __webpack_require__(122),
-	    isArray = __webpack_require__(130),
-	    isArrayLikeObject = __webpack_require__(123);
+	var Symbol = __webpack_require__(124),
+	    isArguments = __webpack_require__(127),
+	    isArray = __webpack_require__(133);
+
+	/** Built-in value references. */
+	var spreadableSymbol = Symbol ? Symbol.isConcatSpreadable : undefined;
 
 	/**
 	 * Checks if `value` is a flattenable `arguments` object or array.
@@ -13390,33 +13477,63 @@ var showChatTemplate =
 	 * @returns {boolean} Returns `true` if `value` is flattenable, else `false`.
 	 */
 	function isFlattenable(value) {
-	  return isArrayLikeObject(value) && (isArray(value) || isArguments(value));
+	  return isArray(value) || isArguments(value) ||
+	    !!(spreadableSymbol && value && value[spreadableSymbol]);
 	}
 
 	module.exports = isFlattenable;
 
 
 /***/ },
-/* 122 */
+/* 124 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isArrayLikeObject = __webpack_require__(123);
+	var root = __webpack_require__(125);
 
-	/** `Object#toString` result references. */
-	var argsTag = '[object Arguments]';
+	/** Built-in value references. */
+	var Symbol = root.Symbol;
+
+	module.exports = Symbol;
+
+
+/***/ },
+/* 125 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var freeGlobal = __webpack_require__(126);
+
+	/** Detect free variable `self`. */
+	var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
+
+	/** Used as a reference to the global object. */
+	var root = freeGlobal || freeSelf || Function('return this')();
+
+	module.exports = root;
+
+
+/***/ },
+/* 126 */
+/***/ function(module, exports) {
+
+	/* WEBPACK VAR INJECTION */(function(global) {/** Detect free variable `global` from Node.js. */
+	var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
+
+	module.exports = freeGlobal;
+
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
+
+/***/ },
+/* 127 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var baseIsArguments = __webpack_require__(128),
+	    isObjectLike = __webpack_require__(132);
 
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
 
 	/** Used to check objects for own properties. */
 	var hasOwnProperty = objectProto.hasOwnProperty;
-
-	/**
-	 * Used to resolve the
-	 * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-	 * of values.
-	 */
-	var objectToString = objectProto.toString;
 
 	/** Built-in value references. */
 	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
@@ -13429,7 +13546,7 @@ var showChatTemplate =
 	 * @since 0.1.0
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified,
+	 * @returns {boolean} Returns `true` if `value` is an `arguments` object,
 	 *  else `false`.
 	 * @example
 	 *
@@ -13439,229 +13556,154 @@ var showChatTemplate =
 	 * _.isArguments([1, 2, 3]);
 	 * // => false
 	 */
-	function isArguments(value) {
-	  // Safari 8.1 incorrectly makes `arguments.callee` enumerable in strict mode.
-	  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
-	    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
-	}
+	var isArguments = baseIsArguments(function() { return arguments; }()) ? baseIsArguments : function(value) {
+	  return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
+	    !propertyIsEnumerable.call(value, 'callee');
+	};
 
 	module.exports = isArguments;
 
 
 /***/ },
-/* 123 */
+/* 128 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isArrayLike = __webpack_require__(124),
-	    isObjectLike = __webpack_require__(129);
-
-	/**
-	 * This method is like `_.isArrayLike` except that it also checks if `value`
-	 * is an object.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @since 4.0.0
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is an array-like object,
-	 *  else `false`.
-	 * @example
-	 *
-	 * _.isArrayLikeObject([1, 2, 3]);
-	 * // => true
-	 *
-	 * _.isArrayLikeObject(document.body.children);
-	 * // => true
-	 *
-	 * _.isArrayLikeObject('abc');
-	 * // => false
-	 *
-	 * _.isArrayLikeObject(_.noop);
-	 * // => false
-	 */
-	function isArrayLikeObject(value) {
-	  return isObjectLike(value) && isArrayLike(value);
-	}
-
-	module.exports = isArrayLikeObject;
-
-
-/***/ },
-/* 124 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var getLength = __webpack_require__(125),
-	    isFunction = __webpack_require__(127),
-	    isLength = __webpack_require__(128);
-
-	/**
-	 * Checks if `value` is array-like. A value is considered array-like if it's
-	 * not a function and has a `value.length` that's an integer greater than or
-	 * equal to `0` and less than or equal to `Number.MAX_SAFE_INTEGER`.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @since 4.0.0
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is array-like, else `false`.
-	 * @example
-	 *
-	 * _.isArrayLike([1, 2, 3]);
-	 * // => true
-	 *
-	 * _.isArrayLike(document.body.children);
-	 * // => true
-	 *
-	 * _.isArrayLike('abc');
-	 * // => true
-	 *
-	 * _.isArrayLike(_.noop);
-	 * // => false
-	 */
-	function isArrayLike(value) {
-	  return value != null && isLength(getLength(value)) && !isFunction(value);
-	}
-
-	module.exports = isArrayLike;
-
-
-/***/ },
-/* 125 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var baseProperty = __webpack_require__(126);
-
-	/**
-	 * Gets the "length" property value of `object`.
-	 *
-	 * **Note:** This function is used to avoid a
-	 * [JIT bug](https://bugs.webkit.org/show_bug.cgi?id=142792) that affects
-	 * Safari on at least iOS 8.1-8.3 ARM64.
-	 *
-	 * @private
-	 * @param {Object} object The object to query.
-	 * @returns {*} Returns the "length" value.
-	 */
-	var getLength = baseProperty('length');
-
-	module.exports = getLength;
-
-
-/***/ },
-/* 126 */
-/***/ function(module, exports) {
-
-	/**
-	 * The base implementation of `_.property` without support for deep paths.
-	 *
-	 * @private
-	 * @param {string} key The key of the property to get.
-	 * @returns {Function} Returns the new function.
-	 */
-	function baseProperty(key) {
-	  return function(object) {
-	    return object == null ? undefined : object[key];
-	  };
-	}
-
-	module.exports = baseProperty;
-
-
-/***/ },
-/* 127 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isObject = __webpack_require__(117);
+	var baseGetTag = __webpack_require__(129),
+	    isObjectLike = __webpack_require__(132);
 
 	/** `Object#toString` result references. */
-	var funcTag = '[object Function]',
-	    genTag = '[object GeneratorFunction]';
+	var argsTag = '[object Arguments]';
+
+	/**
+	 * The base implementation of `_.isArguments`.
+	 *
+	 * @private
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is an `arguments` object,
+	 */
+	function baseIsArguments(value) {
+	  return isObjectLike(value) && baseGetTag(value) == argsTag;
+	}
+
+	module.exports = baseIsArguments;
+
+
+/***/ },
+/* 129 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Symbol = __webpack_require__(124),
+	    getRawTag = __webpack_require__(130),
+	    objectToString = __webpack_require__(131);
+
+	/** `Object#toString` result references. */
+	var nullTag = '[object Null]',
+	    undefinedTag = '[object Undefined]';
+
+	/** Built-in value references. */
+	var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+
+	/**
+	 * The base implementation of `getTag` without fallbacks for buggy environments.
+	 *
+	 * @private
+	 * @param {*} value The value to query.
+	 * @returns {string} Returns the `toStringTag`.
+	 */
+	function baseGetTag(value) {
+	  if (value == null) {
+	    return value === undefined ? undefinedTag : nullTag;
+	  }
+	  return (symToStringTag && symToStringTag in Object(value))
+	    ? getRawTag(value)
+	    : objectToString(value);
+	}
+
+	module.exports = baseGetTag;
+
+
+/***/ },
+/* 130 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Symbol = __webpack_require__(124);
+
+	/** Used for built-in method references. */
+	var objectProto = Object.prototype;
+
+	/** Used to check objects for own properties. */
+	var hasOwnProperty = objectProto.hasOwnProperty;
+
+	/**
+	 * Used to resolve the
+	 * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
+	 * of values.
+	 */
+	var nativeObjectToString = objectProto.toString;
+
+	/** Built-in value references. */
+	var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
+
+	/**
+	 * A specialized version of `baseGetTag` which ignores `Symbol.toStringTag` values.
+	 *
+	 * @private
+	 * @param {*} value The value to query.
+	 * @returns {string} Returns the raw `toStringTag`.
+	 */
+	function getRawTag(value) {
+	  var isOwn = hasOwnProperty.call(value, symToStringTag),
+	      tag = value[symToStringTag];
+
+	  try {
+	    value[symToStringTag] = undefined;
+	    var unmasked = true;
+	  } catch (e) {}
+
+	  var result = nativeObjectToString.call(value);
+	  if (unmasked) {
+	    if (isOwn) {
+	      value[symToStringTag] = tag;
+	    } else {
+	      delete value[symToStringTag];
+	    }
+	  }
+	  return result;
+	}
+
+	module.exports = getRawTag;
+
+
+/***/ },
+/* 131 */
+/***/ function(module, exports) {
 
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
 
 	/**
 	 * Used to resolve the
-	 * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
+	 * [`toStringTag`](http://ecma-international.org/ecma-262/7.0/#sec-object.prototype.tostring)
 	 * of values.
 	 */
-	var objectToString = objectProto.toString;
+	var nativeObjectToString = objectProto.toString;
 
 	/**
-	 * Checks if `value` is classified as a `Function` object.
+	 * Converts `value` to a string using `Object.prototype.toString`.
 	 *
-	 * @static
-	 * @memberOf _
-	 * @since 0.1.0
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified,
-	 *  else `false`.
-	 * @example
-	 *
-	 * _.isFunction(_);
-	 * // => true
-	 *
-	 * _.isFunction(/abc/);
-	 * // => false
+	 * @private
+	 * @param {*} value The value to convert.
+	 * @returns {string} Returns the converted string.
 	 */
-	function isFunction(value) {
-	  // The use of `Object#toString` avoids issues with the `typeof` operator
-	  // in Safari 8 which returns 'object' for typed array and weak map constructors,
-	  // and PhantomJS 1.9 which returns 'function' for `NodeList` instances.
-	  var tag = isObject(value) ? objectToString.call(value) : '';
-	  return tag == funcTag || tag == genTag;
+	function objectToString(value) {
+	  return nativeObjectToString.call(value);
 	}
 
-	module.exports = isFunction;
+	module.exports = objectToString;
 
 
 /***/ },
-/* 128 */
-/***/ function(module, exports) {
-
-	/** Used as references for various `Number` constants. */
-	var MAX_SAFE_INTEGER = 9007199254740991;
-
-	/**
-	 * Checks if `value` is a valid array-like length.
-	 *
-	 * **Note:** This function is loosely based on
-	 * [`ToLength`](http://ecma-international.org/ecma-262/6.0/#sec-tolength).
-	 *
-	 * @static
-	 * @memberOf _
-	 * @since 4.0.0
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is a valid length,
-	 *  else `false`.
-	 * @example
-	 *
-	 * _.isLength(3);
-	 * // => true
-	 *
-	 * _.isLength(Number.MIN_VALUE);
-	 * // => false
-	 *
-	 * _.isLength(Infinity);
-	 * // => false
-	 *
-	 * _.isLength('3');
-	 * // => false
-	 */
-	function isLength(value) {
-	  return typeof value == 'number' &&
-	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
-	}
-
-	module.exports = isLength;
-
-
-/***/ },
-/* 129 */
+/* 132 */
 /***/ function(module, exports) {
 
 	/**
@@ -13689,14 +13731,14 @@ var showChatTemplate =
 	 * // => false
 	 */
 	function isObjectLike(value) {
-	  return !!value && typeof value == 'object';
+	  return value != null && typeof value == 'object';
 	}
 
 	module.exports = isObjectLike;
 
 
 /***/ },
-/* 130 */
+/* 133 */
 /***/ function(module, exports) {
 
 	/**
@@ -13705,11 +13747,9 @@ var showChatTemplate =
 	 * @static
 	 * @memberOf _
 	 * @since 0.1.0
-	 * @type {Function}
 	 * @category Lang
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified,
-	 *  else `false`.
+	 * @returns {boolean} Returns `true` if `value` is an array, else `false`.
 	 * @example
 	 *
 	 * _.isArray([1, 2, 3]);
@@ -13730,56 +13770,177 @@ var showChatTemplate =
 
 
 /***/ },
-/* 131 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var metaMap = __webpack_require__(132),
-	    noop = __webpack_require__(140);
-
-	/**
-	 * Gets metadata for `func`.
-	 *
-	 * @private
-	 * @param {Function} func The function to query.
-	 * @returns {*} Returns the metadata for `func`.
-	 */
-	var getData = !metaMap ? noop : function(func) {
-	  return metaMap.get(func);
-	};
-
-	module.exports = getData;
-
-
-/***/ },
-/* 132 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var WeakMap = __webpack_require__(133);
-
-	/** Used to store function metadata. */
-	var metaMap = WeakMap && new WeakMap;
-
-	module.exports = metaMap;
-
-
-/***/ },
-/* 133 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var getNative = __webpack_require__(134),
-	    root = __webpack_require__(138);
-
-	/* Built-in method references that are verified to be native. */
-	var WeakMap = getNative(root, 'WeakMap');
-
-	module.exports = WeakMap;
-
-
-/***/ },
 /* 134 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isNative = __webpack_require__(135);
+	var apply = __webpack_require__(135);
+
+	/* Built-in method references for those with the same name as other `lodash` methods. */
+	var nativeMax = Math.max;
+
+	/**
+	 * A specialized version of `baseRest` which transforms the rest array.
+	 *
+	 * @private
+	 * @param {Function} func The function to apply a rest parameter to.
+	 * @param {number} [start=func.length-1] The start position of the rest parameter.
+	 * @param {Function} transform The rest array transform.
+	 * @returns {Function} Returns the new function.
+	 */
+	function overRest(func, start, transform) {
+	  start = nativeMax(start === undefined ? (func.length - 1) : start, 0);
+	  return function() {
+	    var args = arguments,
+	        index = -1,
+	        length = nativeMax(args.length - start, 0),
+	        array = Array(length);
+
+	    while (++index < length) {
+	      array[index] = args[start + index];
+	    }
+	    index = -1;
+	    var otherArgs = Array(start + 1);
+	    while (++index < start) {
+	      otherArgs[index] = args[index];
+	    }
+	    otherArgs[start] = transform(array);
+	    return apply(func, this, otherArgs);
+	  };
+	}
+
+	module.exports = overRest;
+
+
+/***/ },
+/* 135 */
+/***/ function(module, exports) {
+
+	/**
+	 * A faster alternative to `Function#apply`, this function invokes `func`
+	 * with the `this` binding of `thisArg` and the arguments of `args`.
+	 *
+	 * @private
+	 * @param {Function} func The function to invoke.
+	 * @param {*} thisArg The `this` binding of `func`.
+	 * @param {Array} args The arguments to invoke `func` with.
+	 * @returns {*} Returns the result of `func`.
+	 */
+	function apply(func, thisArg, args) {
+	  switch (args.length) {
+	    case 0: return func.call(thisArg);
+	    case 1: return func.call(thisArg, args[0]);
+	    case 2: return func.call(thisArg, args[0], args[1]);
+	    case 3: return func.call(thisArg, args[0], args[1], args[2]);
+	  }
+	  return func.apply(thisArg, args);
+	}
+
+	module.exports = apply;
+
+
+/***/ },
+/* 136 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var baseSetToString = __webpack_require__(137),
+	    shortOut = __webpack_require__(148);
+
+	/**
+	 * Sets the `toString` method of `func` to return `string`.
+	 *
+	 * @private
+	 * @param {Function} func The function to modify.
+	 * @param {Function} string The `toString` result.
+	 * @returns {Function} Returns `func`.
+	 */
+	var setToString = shortOut(baseSetToString);
+
+	module.exports = setToString;
+
+
+/***/ },
+/* 137 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var constant = __webpack_require__(138),
+	    defineProperty = __webpack_require__(139),
+	    identity = __webpack_require__(147);
+
+	/**
+	 * The base implementation of `setToString` without support for hot loop shorting.
+	 *
+	 * @private
+	 * @param {Function} func The function to modify.
+	 * @param {Function} string The `toString` result.
+	 * @returns {Function} Returns `func`.
+	 */
+	var baseSetToString = !defineProperty ? identity : function(func, string) {
+	  return defineProperty(func, 'toString', {
+	    'configurable': true,
+	    'enumerable': false,
+	    'value': constant(string),
+	    'writable': true
+	  });
+	};
+
+	module.exports = baseSetToString;
+
+
+/***/ },
+/* 138 */
+/***/ function(module, exports) {
+
+	/**
+	 * Creates a function that returns `value`.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 2.4.0
+	 * @category Util
+	 * @param {*} value The value to return from the new function.
+	 * @returns {Function} Returns the new constant function.
+	 * @example
+	 *
+	 * var objects = _.times(2, _.constant({ 'a': 1 }));
+	 *
+	 * console.log(objects);
+	 * // => [{ 'a': 1 }, { 'a': 1 }]
+	 *
+	 * console.log(objects[0] === objects[1]);
+	 * // => true
+	 */
+	function constant(value) {
+	  return function() {
+	    return value;
+	  };
+	}
+
+	module.exports = constant;
+
+
+/***/ },
+/* 139 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(140);
+
+	var defineProperty = (function() {
+	  try {
+	    var func = getNative(Object, 'defineProperty');
+	    func({}, '', {});
+	    return func;
+	  } catch (e) {}
+	}());
+
+	module.exports = defineProperty;
+
+
+/***/ },
+/* 140 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var baseIsNative = __webpack_require__(141),
+	    getValue = __webpack_require__(146);
 
 	/**
 	 * Gets the native function at `key` of `object`.
@@ -13790,25 +13951,25 @@ var showChatTemplate =
 	 * @returns {*} Returns the function if it's native, else `undefined`.
 	 */
 	function getNative(object, key) {
-	  var value = object[key];
-	  return isNative(value) ? value : undefined;
+	  var value = getValue(object, key);
+	  return baseIsNative(value) ? value : undefined;
 	}
 
 	module.exports = getNative;
 
 
 /***/ },
-/* 135 */
+/* 141 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var isFunction = __webpack_require__(127),
-	    isHostObject = __webpack_require__(136),
+	var isFunction = __webpack_require__(142),
+	    isMasked = __webpack_require__(143),
 	    isObject = __webpack_require__(117),
-	    toSource = __webpack_require__(137);
+	    toSource = __webpack_require__(145);
 
 	/**
 	 * Used to match `RegExp`
-	 * [syntax characters](http://ecma-international.org/ecma-262/6.0/#sec-patterns).
+	 * [syntax characters](http://ecma-international.org/ecma-262/7.0/#sec-patterns).
 	 */
 	var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
 
@@ -13816,10 +13977,11 @@ var showChatTemplate =
 	var reIsHostCtor = /^\[object .+?Constructor\]$/;
 
 	/** Used for built-in method references. */
-	var objectProto = Object.prototype;
+	var funcProto = Function.prototype,
+	    objectProto = Object.prototype;
 
 	/** Used to resolve the decompiled source of functions. */
-	var funcToString = Function.prototype.toString;
+	var funcToString = funcProto.toString;
 
 	/** Used to check objects for own properties. */
 	var hasOwnProperty = objectProto.hasOwnProperty;
@@ -13831,72 +13993,120 @@ var showChatTemplate =
 	);
 
 	/**
-	 * Checks if `value` is a native function.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @since 3.0.0
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is a native function,
-	 *  else `false`.
-	 * @example
-	 *
-	 * _.isNative(Array.prototype.push);
-	 * // => true
-	 *
-	 * _.isNative(_);
-	 * // => false
-	 */
-	function isNative(value) {
-	  if (!isObject(value)) {
-	    return false;
-	  }
-	  var pattern = (isFunction(value) || isHostObject(value)) ? reIsNative : reIsHostCtor;
-	  return pattern.test(toSource(value));
-	}
-
-	module.exports = isNative;
-
-
-/***/ },
-/* 136 */
-/***/ function(module, exports) {
-
-	/**
-	 * Checks if `value` is a host object in IE < 9.
+	 * The base implementation of `_.isNative` without bad shim checks.
 	 *
 	 * @private
 	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is a host object, else `false`.
+	 * @returns {boolean} Returns `true` if `value` is a native function,
+	 *  else `false`.
 	 */
-	function isHostObject(value) {
-	  // Many host objects are `Object` objects that can coerce to strings
-	  // despite having improperly defined `toString` methods.
-	  var result = false;
-	  if (value != null && typeof value.toString != 'function') {
-	    try {
-	      result = !!(value + '');
-	    } catch (e) {}
+	function baseIsNative(value) {
+	  if (!isObject(value) || isMasked(value)) {
+	    return false;
 	  }
-	  return result;
+	  var pattern = isFunction(value) ? reIsNative : reIsHostCtor;
+	  return pattern.test(toSource(value));
 	}
 
-	module.exports = isHostObject;
+	module.exports = baseIsNative;
 
 
 /***/ },
-/* 137 */
+/* 142 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var baseGetTag = __webpack_require__(129),
+	    isObject = __webpack_require__(117);
+
+	/** `Object#toString` result references. */
+	var asyncTag = '[object AsyncFunction]',
+	    funcTag = '[object Function]',
+	    genTag = '[object GeneratorFunction]',
+	    proxyTag = '[object Proxy]';
+
+	/**
+	 * Checks if `value` is classified as a `Function` object.
+	 *
+	 * @static
+	 * @memberOf _
+	 * @since 0.1.0
+	 * @category Lang
+	 * @param {*} value The value to check.
+	 * @returns {boolean} Returns `true` if `value` is a function, else `false`.
+	 * @example
+	 *
+	 * _.isFunction(_);
+	 * // => true
+	 *
+	 * _.isFunction(/abc/);
+	 * // => false
+	 */
+	function isFunction(value) {
+	  if (!isObject(value)) {
+	    return false;
+	  }
+	  // The use of `Object#toString` avoids issues with the `typeof` operator
+	  // in Safari 9 which returns 'object' for typed arrays and other constructors.
+	  var tag = baseGetTag(value);
+	  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
+	}
+
+	module.exports = isFunction;
+
+
+/***/ },
+/* 143 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var coreJsData = __webpack_require__(144);
+
+	/** Used to detect methods masquerading as native. */
+	var maskSrcKey = (function() {
+	  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+	  return uid ? ('Symbol(src)_1.' + uid) : '';
+	}());
+
+	/**
+	 * Checks if `func` has its source masked.
+	 *
+	 * @private
+	 * @param {Function} func The function to check.
+	 * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+	 */
+	function isMasked(func) {
+	  return !!maskSrcKey && (maskSrcKey in func);
+	}
+
+	module.exports = isMasked;
+
+
+/***/ },
+/* 144 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var root = __webpack_require__(125);
+
+	/** Used to detect overreaching core-js shims. */
+	var coreJsData = root['__core-js_shared__'];
+
+	module.exports = coreJsData;
+
+
+/***/ },
+/* 145 */
 /***/ function(module, exports) {
 
+	/** Used for built-in method references. */
+	var funcProto = Function.prototype;
+
 	/** Used to resolve the decompiled source of functions. */
-	var funcToString = Function.prototype.toString;
+	var funcToString = funcProto.toString;
 
 	/**
 	 * Converts `func` to its source code.
 	 *
 	 * @private
-	 * @param {Function} func The function to process.
+	 * @param {Function} func The function to convert.
 	 * @returns {string} Returns the source code.
 	 */
 	function toSource(func) {
@@ -13915,78 +14125,146 @@ var showChatTemplate =
 
 
 /***/ },
-/* 138 */
-/***/ function(module, exports, __webpack_require__) {
-
-	/* WEBPACK VAR INJECTION */(function(module, global) {var checkGlobal = __webpack_require__(139);
-
-	/** Used to determine if values are of the language type `Object`. */
-	var objectTypes = {
-	  'function': true,
-	  'object': true
-	};
-
-	/** Detect free variable `exports`. */
-	var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
-	  ? exports
-	  : undefined;
-
-	/** Detect free variable `module`. */
-	var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
-	  ? module
-	  : undefined;
-
-	/** Detect free variable `global` from Node.js. */
-	var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
-
-	/** Detect free variable `self`. */
-	var freeSelf = checkGlobal(objectTypes[typeof self] && self);
-
-	/** Detect free variable `window`. */
-	var freeWindow = checkGlobal(objectTypes[typeof window] && window);
-
-	/** Detect `this` as the global object. */
-	var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
-
-	/**
-	 * Used as a reference to the global object.
-	 *
-	 * The `this` value is used if it's the global object to avoid Greasemonkey's
-	 * restricted `window` object, otherwise the `window` object is used.
-	 */
-	var root = freeGlobal ||
-	  ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
-	    freeSelf || thisGlobal || Function('return this')();
-
-	module.exports = root;
-
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(69)(module), (function() { return this; }())))
-
-/***/ },
-/* 139 */
+/* 146 */
 /***/ function(module, exports) {
 
 	/**
-	 * Checks if `value` is a global object.
+	 * Gets the value at `key` of `object`.
 	 *
 	 * @private
-	 * @param {*} value The value to check.
-	 * @returns {null|Object} Returns `value` if it's a global object, else `null`.
+	 * @param {Object} [object] The object to query.
+	 * @param {string} key The key of the property to get.
+	 * @returns {*} Returns the property value.
 	 */
-	function checkGlobal(value) {
-	  return (value && value.Object === Object) ? value : null;
+	function getValue(object, key) {
+	  return object == null ? undefined : object[key];
 	}
 
-	module.exports = checkGlobal;
+	module.exports = getValue;
 
 
 /***/ },
-/* 140 */
+/* 147 */
 /***/ function(module, exports) {
 
 	/**
-	 * A no-operation function that returns `undefined` regardless of the
-	 * arguments it receives.
+	 * This method returns the first argument it receives.
+	 *
+	 * @static
+	 * @since 0.1.0
+	 * @memberOf _
+	 * @category Util
+	 * @param {*} value Any value.
+	 * @returns {*} Returns `value`.
+	 * @example
+	 *
+	 * var object = { 'a': 1 };
+	 *
+	 * console.log(_.identity(object) === object);
+	 * // => true
+	 */
+	function identity(value) {
+	  return value;
+	}
+
+	module.exports = identity;
+
+
+/***/ },
+/* 148 */
+/***/ function(module, exports) {
+
+	/** Used to detect hot functions by number of calls within a span of milliseconds. */
+	var HOT_COUNT = 800,
+	    HOT_SPAN = 16;
+
+	/* Built-in method references for those with the same name as other `lodash` methods. */
+	var nativeNow = Date.now;
+
+	/**
+	 * Creates a function that'll short out and invoke `identity` instead
+	 * of `func` when it's called `HOT_COUNT` or more times in `HOT_SPAN`
+	 * milliseconds.
+	 *
+	 * @private
+	 * @param {Function} func The function to restrict.
+	 * @returns {Function} Returns the new shortable function.
+	 */
+	function shortOut(func) {
+	  var count = 0,
+	      lastCalled = 0;
+
+	  return function() {
+	    var stamp = nativeNow(),
+	        remaining = HOT_SPAN - (stamp - lastCalled);
+
+	    lastCalled = stamp;
+	    if (remaining > 0) {
+	      if (++count >= HOT_COUNT) {
+	        return arguments[0];
+	      }
+	    } else {
+	      count = 0;
+	    }
+	    return func.apply(undefined, arguments);
+	  };
+	}
+
+	module.exports = shortOut;
+
+
+/***/ },
+/* 149 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var metaMap = __webpack_require__(150),
+	    noop = __webpack_require__(152);
+
+	/**
+	 * Gets metadata for `func`.
+	 *
+	 * @private
+	 * @param {Function} func The function to query.
+	 * @returns {*} Returns the metadata for `func`.
+	 */
+	var getData = !metaMap ? noop : function(func) {
+	  return metaMap.get(func);
+	};
+
+	module.exports = getData;
+
+
+/***/ },
+/* 150 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var WeakMap = __webpack_require__(151);
+
+	/** Used to store function metadata. */
+	var metaMap = WeakMap && new WeakMap;
+
+	module.exports = metaMap;
+
+
+/***/ },
+/* 151 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var getNative = __webpack_require__(140),
+	    root = __webpack_require__(125);
+
+	/* Built-in method references that are verified to be native. */
+	var WeakMap = getNative(root, 'WeakMap');
+
+	module.exports = WeakMap;
+
+
+/***/ },
+/* 152 */
+/***/ function(module, exports) {
+
+	/**
+	 * This method returns `undefined`.
 	 *
 	 * @static
 	 * @memberOf _
@@ -13994,10 +14272,8 @@ var showChatTemplate =
 	 * @category Util
 	 * @example
 	 *
-	 * var object = { 'user': 'fred' };
-	 *
-	 * _.noop(object) === undefined;
-	 * // => true
+	 * _.times(2, _.noop);
+	 * // => [undefined, undefined]
 	 */
 	function noop() {
 	  // No operation performed.
@@ -14007,10 +14283,10 @@ var showChatTemplate =
 
 
 /***/ },
-/* 141 */
+/* 153 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var realNames = __webpack_require__(142);
+	var realNames = __webpack_require__(154);
 
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
@@ -14044,7 +14320,7 @@ var showChatTemplate =
 
 
 /***/ },
-/* 142 */
+/* 154 */
 /***/ function(module, exports) {
 
 	/** Used to lookup unminified function names. */
@@ -14054,13 +14330,13 @@ var showChatTemplate =
 
 
 /***/ },
-/* 143 */
+/* 155 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LazyWrapper = __webpack_require__(144),
-	    getData = __webpack_require__(131),
-	    getFuncName = __webpack_require__(141),
-	    lodash = __webpack_require__(145);
+	var LazyWrapper = __webpack_require__(156),
+	    getData = __webpack_require__(149),
+	    getFuncName = __webpack_require__(153),
+	    lodash = __webpack_require__(157);
 
 	/**
 	 * Checks if `func` has a lazy counterpart.
@@ -14088,7 +14364,7 @@ var showChatTemplate =
 
 
 /***/ },
-/* 144 */
+/* 156 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var baseCreate = __webpack_require__(116),
@@ -14122,15 +14398,15 @@ var showChatTemplate =
 
 
 /***/ },
-/* 145 */
+/* 157 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LazyWrapper = __webpack_require__(144),
+	var LazyWrapper = __webpack_require__(156),
 	    LodashWrapper = __webpack_require__(115),
 	    baseLodash = __webpack_require__(118),
-	    isArray = __webpack_require__(130),
-	    isObjectLike = __webpack_require__(129),
-	    wrapperClone = __webpack_require__(146);
+	    isArray = __webpack_require__(133),
+	    isObjectLike = __webpack_require__(132),
+	    wrapperClone = __webpack_require__(158);
 
 	/** Used for built-in method references. */
 	var objectProto = Object.prototype;
@@ -14156,9 +14432,9 @@ var showChatTemplate =
 	 * Shortcut fusion is an optimization to merge iteratee calls; this avoids
 	 * the creation of intermediate arrays and can greatly reduce the number of
 	 * iteratee executions. Sections of a chain sequence qualify for shortcut
-	 * fusion if the section is applied to an array of at least `200` elements
-	 * and any iteratees accept only one argument. The heuristic for whether a
-	 * section qualifies for shortcut fusion is subject to change.
+	 * fusion if the section is applied to an array and iteratees accept only
+	 * one argument. The heuristic for whether a section qualifies for shortcut
+	 * fusion is subject to change.
 	 *
 	 * Chaining is supported in custom builds as long as the `_#value` method is
 	 * directly or indirectly included in the build.
@@ -14204,28 +14480,30 @@ var showChatTemplate =
 	 *
 	 * The wrapper methods that are **not** chainable by default are:
 	 * `add`, `attempt`, `camelCase`, `capitalize`, `ceil`, `clamp`, `clone`,
-	 * `cloneDeep`, `cloneDeepWith`, `cloneWith`, `deburr`, `divide`, `each`,
-	 * `eachRight`, `endsWith`, `eq`, `escape`, `escapeRegExp`, `every`, `find`,
-	 * `findIndex`, `findKey`, `findLast`, `findLastIndex`, `findLastKey`, `first`,
-	 * `floor`, `forEach`, `forEachRight`, `forIn`, `forInRight`, `forOwn`,
-	 * `forOwnRight`, `get`, `gt`, `gte`, `has`, `hasIn`, `head`, `identity`,
-	 * `includes`, `indexOf`, `inRange`, `invoke`, `isArguments`, `isArray`,
-	 * `isArrayBuffer`, `isArrayLike`, `isArrayLikeObject`, `isBoolean`, `isBuffer`,
-	 * `isDate`, `isElement`, `isEmpty`, `isEqual`, `isEqualWith`, `isError`,
-	 * `isFinite`, `isFunction`, `isInteger`, `isLength`, `isMap`, `isMatch`,
-	 * `isMatchWith`, `isNaN`, `isNative`, `isNil`, `isNull`, `isNumber`,
-	 * `isObject`, `isObjectLike`, `isPlainObject`, `isRegExp`, `isSafeInteger`,
-	 * `isSet`, `isString`, `isUndefined`, `isTypedArray`, `isWeakMap`, `isWeakSet`,
-	 * `join`, `kebabCase`, `last`, `lastIndexOf`, `lowerCase`, `lowerFirst`,
-	 * `lt`, `lte`, `max`, `maxBy`, `mean`, `meanBy`, `min`, `minBy`, `multiply`,
-	 * `noConflict`, `noop`, `now`, `nth`, `pad`, `padEnd`, `padStart`, `parseInt`,
-	 * `pop`, `random`, `reduce`, `reduceRight`, `repeat`, `result`, `round`,
-	 * `runInContext`, `sample`, `shift`, `size`, `snakeCase`, `some`, `sortedIndex`,
-	 * `sortedIndexBy`, `sortedLastIndex`, `sortedLastIndexBy`, `startCase`,
-	 * `startsWith`, `subtract`, `sum`, `sumBy`, `template`, `times`, `toInteger`,
-	 * `toJSON`, `toLength`, `toLower`, `toNumber`, `toSafeInteger`, `toString`,
-	 * `toUpper`, `trim`, `trimEnd`, `trimStart`, `truncate`, `unescape`,
-	 * `uniqueId`, `upperCase`, `upperFirst`, `value`, and `words`
+	 * `cloneDeep`, `cloneDeepWith`, `cloneWith`, `conformsTo`, `deburr`,
+	 * `defaultTo`, `divide`, `each`, `eachRight`, `endsWith`, `eq`, `escape`,
+	 * `escapeRegExp`, `every`, `find`, `findIndex`, `findKey`, `findLast`,
+	 * `findLastIndex`, `findLastKey`, `first`, `floor`, `forEach`, `forEachRight`,
+	 * `forIn`, `forInRight`, `forOwn`, `forOwnRight`, `get`, `gt`, `gte`, `has`,
+	 * `hasIn`, `head`, `identity`, `includes`, `indexOf`, `inRange`, `invoke`,
+	 * `isArguments`, `isArray`, `isArrayBuffer`, `isArrayLike`, `isArrayLikeObject`,
+	 * `isBoolean`, `isBuffer`, `isDate`, `isElement`, `isEmpty`, `isEqual`,
+	 * `isEqualWith`, `isError`, `isFinite`, `isFunction`, `isInteger`, `isLength`,
+	 * `isMap`, `isMatch`, `isMatchWith`, `isNaN`, `isNative`, `isNil`, `isNull`,
+	 * `isNumber`, `isObject`, `isObjectLike`, `isPlainObject`, `isRegExp`,
+	 * `isSafeInteger`, `isSet`, `isString`, `isUndefined`, `isTypedArray`,
+	 * `isWeakMap`, `isWeakSet`, `join`, `kebabCase`, `last`, `lastIndexOf`,
+	 * `lowerCase`, `lowerFirst`, `lt`, `lte`, `max`, `maxBy`, `mean`, `meanBy`,
+	 * `min`, `minBy`, `multiply`, `noConflict`, `noop`, `now`, `nth`, `pad`,
+	 * `padEnd`, `padStart`, `parseInt`, `pop`, `random`, `reduce`, `reduceRight`,
+	 * `repeat`, `result`, `round`, `runInContext`, `sample`, `shift`, `size`,
+	 * `snakeCase`, `some`, `sortedIndex`, `sortedIndexBy`, `sortedLastIndex`,
+	 * `sortedLastIndexBy`, `startCase`, `startsWith`, `stubArray`, `stubFalse`,
+	 * `stubObject`, `stubString`, `stubTrue`, `subtract`, `sum`, `sumBy`,
+	 * `template`, `times`, `toFinite`, `toInteger`, `toJSON`, `toLength`,
+	 * `toLower`, `toNumber`, `toSafeInteger`, `toString`, `toUpper`, `trim`,
+	 * `trimEnd`, `trimStart`, `truncate`, `unescape`, `uniqueId`, `upperCase`,
+	 * `upperFirst`, `value`, and `words`
 	 *
 	 * @name _
 	 * @constructor
@@ -14273,12 +14551,12 @@ var showChatTemplate =
 
 
 /***/ },
-/* 146 */
+/* 158 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var LazyWrapper = __webpack_require__(144),
+	var LazyWrapper = __webpack_require__(156),
 	    LodashWrapper = __webpack_require__(115),
-	    copyArray = __webpack_require__(147);
+	    copyArray = __webpack_require__(159);
 
 	/**
 	 * Creates a clone of `wrapper`.
@@ -14302,7 +14580,7 @@ var showChatTemplate =
 
 
 /***/ },
-/* 147 */
+/* 159 */
 /***/ function(module, exports) {
 
 	/**
@@ -14328,275 +14606,7 @@ var showChatTemplate =
 
 
 /***/ },
-/* 148 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var apply = __webpack_require__(149),
-	    toInteger = __webpack_require__(150);
-
-	/** Used as the `TypeError` message for "Functions" methods. */
-	var FUNC_ERROR_TEXT = 'Expected a function';
-
-	/* Built-in method references for those with the same name as other `lodash` methods. */
-	var nativeMax = Math.max;
-
-	/**
-	 * Creates a function that invokes `func` with the `this` binding of the
-	 * created function and arguments from `start` and beyond provided as
-	 * an array.
-	 *
-	 * **Note:** This method is based on the
-	 * [rest parameter](https://mdn.io/rest_parameters).
-	 *
-	 * @static
-	 * @memberOf _
-	 * @since 4.0.0
-	 * @category Function
-	 * @param {Function} func The function to apply a rest parameter to.
-	 * @param {number} [start=func.length-1] The start position of the rest parameter.
-	 * @returns {Function} Returns the new function.
-	 * @example
-	 *
-	 * var say = _.rest(function(what, names) {
-	 *   return what + ' ' + _.initial(names).join(', ') +
-	 *     (_.size(names) > 1 ? ', & ' : '') + _.last(names);
-	 * });
-	 *
-	 * say('hello', 'fred', 'barney', 'pebbles');
-	 * // => 'hello fred, barney, & pebbles'
-	 */
-	function rest(func, start) {
-	  if (typeof func != 'function') {
-	    throw new TypeError(FUNC_ERROR_TEXT);
-	  }
-	  start = nativeMax(start === undefined ? (func.length - 1) : toInteger(start), 0);
-	  return function() {
-	    var args = arguments,
-	        index = -1,
-	        length = nativeMax(args.length - start, 0),
-	        array = Array(length);
-
-	    while (++index < length) {
-	      array[index] = args[start + index];
-	    }
-	    switch (start) {
-	      case 0: return func.call(this, array);
-	      case 1: return func.call(this, args[0], array);
-	      case 2: return func.call(this, args[0], args[1], array);
-	    }
-	    var otherArgs = Array(start + 1);
-	    index = -1;
-	    while (++index < start) {
-	      otherArgs[index] = args[index];
-	    }
-	    otherArgs[start] = array;
-	    return apply(func, this, otherArgs);
-	  };
-	}
-
-	module.exports = rest;
-
-
-/***/ },
-/* 149 */
-/***/ function(module, exports) {
-
-	/**
-	 * A faster alternative to `Function#apply`, this function invokes `func`
-	 * with the `this` binding of `thisArg` and the arguments of `args`.
-	 *
-	 * @private
-	 * @param {Function} func The function to invoke.
-	 * @param {*} thisArg The `this` binding of `func`.
-	 * @param {Array} args The arguments to invoke `func` with.
-	 * @returns {*} Returns the result of `func`.
-	 */
-	function apply(func, thisArg, args) {
-	  var length = args.length;
-	  switch (length) {
-	    case 0: return func.call(thisArg);
-	    case 1: return func.call(thisArg, args[0]);
-	    case 2: return func.call(thisArg, args[0], args[1]);
-	    case 3: return func.call(thisArg, args[0], args[1], args[2]);
-	  }
-	  return func.apply(thisArg, args);
-	}
-
-	module.exports = apply;
-
-
-/***/ },
-/* 150 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var toNumber = __webpack_require__(151);
-
-	/** Used as references for various `Number` constants. */
-	var INFINITY = 1 / 0,
-	    MAX_INTEGER = 1.7976931348623157e+308;
-
-	/**
-	 * Converts `value` to an integer.
-	 *
-	 * **Note:** This function is loosely based on
-	 * [`ToInteger`](http://www.ecma-international.org/ecma-262/6.0/#sec-tointeger).
-	 *
-	 * @static
-	 * @memberOf _
-	 * @since 4.0.0
-	 * @category Lang
-	 * @param {*} value The value to convert.
-	 * @returns {number} Returns the converted integer.
-	 * @example
-	 *
-	 * _.toInteger(3);
-	 * // => 3
-	 *
-	 * _.toInteger(Number.MIN_VALUE);
-	 * // => 0
-	 *
-	 * _.toInteger(Infinity);
-	 * // => 1.7976931348623157e+308
-	 *
-	 * _.toInteger('3');
-	 * // => 3
-	 */
-	function toInteger(value) {
-	  if (!value) {
-	    return value === 0 ? value : 0;
-	  }
-	  value = toNumber(value);
-	  if (value === INFINITY || value === -INFINITY) {
-	    var sign = (value < 0 ? -1 : 1);
-	    return sign * MAX_INTEGER;
-	  }
-	  var remainder = value % 1;
-	  return value === value ? (remainder ? value - remainder : value) : 0;
-	}
-
-	module.exports = toInteger;
-
-
-/***/ },
-/* 151 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isFunction = __webpack_require__(127),
-	    isObject = __webpack_require__(117),
-	    isSymbol = __webpack_require__(152);
-
-	/** Used as references for various `Number` constants. */
-	var NAN = 0 / 0;
-
-	/** Used to match leading and trailing whitespace. */
-	var reTrim = /^\s+|\s+$/g;
-
-	/** Used to detect bad signed hexadecimal string values. */
-	var reIsBadHex = /^[-+]0x[0-9a-f]+$/i;
-
-	/** Used to detect binary string values. */
-	var reIsBinary = /^0b[01]+$/i;
-
-	/** Used to detect octal string values. */
-	var reIsOctal = /^0o[0-7]+$/i;
-
-	/** Built-in method references without a dependency on `root`. */
-	var freeParseInt = parseInt;
-
-	/**
-	 * Converts `value` to a number.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @since 4.0.0
-	 * @category Lang
-	 * @param {*} value The value to process.
-	 * @returns {number} Returns the number.
-	 * @example
-	 *
-	 * _.toNumber(3);
-	 * // => 3
-	 *
-	 * _.toNumber(Number.MIN_VALUE);
-	 * // => 5e-324
-	 *
-	 * _.toNumber(Infinity);
-	 * // => Infinity
-	 *
-	 * _.toNumber('3');
-	 * // => 3
-	 */
-	function toNumber(value) {
-	  if (typeof value == 'number') {
-	    return value;
-	  }
-	  if (isSymbol(value)) {
-	    return NAN;
-	  }
-	  if (isObject(value)) {
-	    var other = isFunction(value.valueOf) ? value.valueOf() : value;
-	    value = isObject(other) ? (other + '') : other;
-	  }
-	  if (typeof value != 'string') {
-	    return value === 0 ? value : +value;
-	  }
-	  value = value.replace(reTrim, '');
-	  var isBinary = reIsBinary.test(value);
-	  return (isBinary || reIsOctal.test(value))
-	    ? freeParseInt(value.slice(2), isBinary ? 2 : 8)
-	    : (reIsBadHex.test(value) ? NAN : +value);
-	}
-
-	module.exports = toNumber;
-
-
-/***/ },
-/* 152 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var isObjectLike = __webpack_require__(129);
-
-	/** `Object#toString` result references. */
-	var symbolTag = '[object Symbol]';
-
-	/** Used for built-in method references. */
-	var objectProto = Object.prototype;
-
-	/**
-	 * Used to resolve the
-	 * [`toStringTag`](http://ecma-international.org/ecma-262/6.0/#sec-object.prototype.tostring)
-	 * of values.
-	 */
-	var objectToString = objectProto.toString;
-
-	/**
-	 * Checks if `value` is classified as a `Symbol` primitive or object.
-	 *
-	 * @static
-	 * @memberOf _
-	 * @since 4.0.0
-	 * @category Lang
-	 * @param {*} value The value to check.
-	 * @returns {boolean} Returns `true` if `value` is correctly classified,
-	 *  else `false`.
-	 * @example
-	 *
-	 * _.isSymbol(Symbol.iterator);
-	 * // => true
-	 *
-	 * _.isSymbol('abc');
-	 * // => false
-	 */
-	function isSymbol(value) {
-	  return typeof value == 'symbol' ||
-	    (isObjectLike(value) && objectToString.call(value) == symbolTag);
-	}
-
-	module.exports = isSymbol;
-
-
-/***/ },
-/* 153 */
+/* 160 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -14632,7 +14642,7 @@ var showChatTemplate =
 	exports.default = new Typography();
 
 /***/ },
-/* 154 */
+/* 161 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -14693,7 +14703,7 @@ var showChatTemplate =
 	exports.default = MuiThemeProvider;
 
 /***/ },
-/* 155 */
+/* 162 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -14708,7 +14718,7 @@ var showChatTemplate =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _Conversation = __webpack_require__(156);
+	var _Conversation = __webpack_require__(163);
 
 	var _Conversation2 = _interopRequireDefault(_Conversation);
 
@@ -14840,7 +14850,7 @@ var showChatTemplate =
 	exports.default = Chat;
 
 /***/ },
-/* 156 */
+/* 163 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -14857,15 +14867,15 @@ var showChatTemplate =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _Messages = __webpack_require__(157);
+	var _Messages = __webpack_require__(164);
 
 	var _Messages2 = _interopRequireDefault(_Messages);
 
-	var _Typing = __webpack_require__(296);
+	var _Typing = __webpack_require__(303);
 
 	var _Typing2 = _interopRequireDefault(_Typing);
 
-	var _ImageLoader = __webpack_require__(297);
+	var _ImageLoader = __webpack_require__(304);
 
 	var _ImageLoader2 = _interopRequireDefault(_ImageLoader);
 
@@ -14928,6 +14938,7 @@ var showChatTemplate =
 	      var messages = _this.state.messages;
 	      var messagesToBeDisplayed = _this.state.messagesToBeDisplayed;
 	      var reset = _this.state.reset;
+	      var typingMessagesToBeDisplayedCount = _this.state.typingMessagesToBeDisplayedCount;
 	      if (_this.state.messagesToBeDisplayed.length > 0) {
 	        var message = _this.state.messagesToBeDisplayed.shift();
 	        var isTyping = _this.state.isTyping;
@@ -14935,6 +14946,7 @@ var showChatTemplate =
 	        if (message.type === 'typing') {
 	          isTyping = true;
 	          inbound = message.inbound;
+	          typingMessagesToBeDisplayedCount += 1;
 	        } else {
 	          messages.push(message);
 	          isTyping = false;
@@ -14948,7 +14960,8 @@ var showChatTemplate =
 	          messagesToBeDisplayed: messagesToBeDisplayed,
 	          isTyping: isTyping,
 	          inbound: inbound,
-	          reset: reset
+	          reset: reset,
+	          typingMessagesToBeDisplayedCount: typingMessagesToBeDisplayedCount
 	        }), onDisplay);
 	        _this.timeoutId = setTimeout(_this.showMessage, message.duration || 800);
 	      } else if (!_this.state.turnOffLoop) {
@@ -15016,7 +15029,8 @@ var showChatTemplate =
 	      isTyping: false,
 	      inbound: true,
 	      reset: false,
-	      turnOffLoop: props.turnOffLoop
+	      turnOffLoop: props.turnOffLoop,
+	      typingMessagesToBeDisplayedCount: 0
 	    };
 	    return _this;
 	  }
@@ -15029,7 +15043,7 @@ var showChatTemplate =
 	  }, {
 	    key: 'componentWillReceiveProps',
 	    value: function componentWillReceiveProps(nextProps) {
-	      var previousMessagesLength = this.state.messagesToBeDisplayed.length + this.state.messages.length - this.state.historicMessages.length;
+	      var previousMessagesLength = this.state.messagesToBeDisplayed.length + this.state.messages.length + this.state.typingMessagesToBeDisplayedCount - this.state.historicMessages.length;
 
 	      if (nextProps.messages.length > previousMessagesLength) {
 	        clearTimeout(this.timeoutId);
@@ -15112,7 +15126,7 @@ var showChatTemplate =
 	exports.default = Conversation;
 
 /***/ },
-/* 157 */
+/* 164 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -15125,11 +15139,11 @@ var showChatTemplate =
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _Message = __webpack_require__(158);
+	var _Message = __webpack_require__(165);
 
 	var _Message2 = _interopRequireDefault(_Message);
 
-	var _reactAddonsCssTransitionGroup = __webpack_require__(160);
+	var _reactAddonsCssTransitionGroup = __webpack_require__(167);
 
 	var _reactAddonsCssTransitionGroup2 = _interopRequireDefault(_reactAddonsCssTransitionGroup);
 
@@ -15191,7 +15205,7 @@ var showChatTemplate =
 	exports.default = Messages;
 
 /***/ },
-/* 158 */
+/* 165 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -15208,7 +15222,7 @@ var showChatTemplate =
 
 	var _Avatar2 = _interopRequireDefault(_Avatar);
 
-	var _MessageContent = __webpack_require__(159);
+	var _MessageContent = __webpack_require__(166);
 
 	var _MessageContent2 = _interopRequireDefault(_MessageContent);
 
@@ -15266,7 +15280,7 @@ var showChatTemplate =
 	exports.default = Message;
 
 /***/ },
-/* 159 */
+/* 166 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -15363,13 +15377,13 @@ var showChatTemplate =
 	exports.default = MessageContent;
 
 /***/ },
-/* 160 */
+/* 167 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(161);
+	module.exports = __webpack_require__(168);
 
 /***/ },
-/* 161 */
+/* 168 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -15389,8 +15403,8 @@ var showChatTemplate =
 
 	var React = __webpack_require__(4);
 
-	var ReactTransitionGroup = __webpack_require__(162);
-	var ReactCSSTransitionGroupChild = __webpack_require__(165);
+	var ReactTransitionGroup = __webpack_require__(169);
+	var ReactCSSTransitionGroupChild = __webpack_require__(172);
 
 	function createTransitionTimeoutPropValidator(transitionType) {
 	  var timeoutPropName = 'transition' + transitionType + 'Timeout';
@@ -15461,7 +15475,7 @@ var showChatTemplate =
 	module.exports = ReactCSSTransitionGroup;
 
 /***/ },
-/* 162 */
+/* 169 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -15480,7 +15494,7 @@ var showChatTemplate =
 	var _assign = __webpack_require__(6);
 
 	var React = __webpack_require__(4);
-	var ReactTransitionChildMapping = __webpack_require__(163);
+	var ReactTransitionChildMapping = __webpack_require__(170);
 
 	var emptyFunction = __webpack_require__(13);
 
@@ -15677,7 +15691,7 @@ var showChatTemplate =
 	module.exports = ReactTransitionGroup;
 
 /***/ },
-/* 163 */
+/* 170 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -15693,7 +15707,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var flattenChildren = __webpack_require__(164);
+	var flattenChildren = __webpack_require__(171);
 
 	var ReactTransitionChildMapping = {
 	  /**
@@ -15779,7 +15793,7 @@ var showChatTemplate =
 	module.exports = ReactTransitionChildMapping;
 
 /***/ },
-/* 164 */
+/* 171 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -15834,7 +15848,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 165 */
+/* 172 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -15851,10 +15865,10 @@ var showChatTemplate =
 	'use strict';
 
 	var React = __webpack_require__(4);
-	var ReactDOM = __webpack_require__(166);
+	var ReactDOM = __webpack_require__(173);
 
-	var CSSCore = __webpack_require__(294);
-	var ReactTransitionEvents = __webpack_require__(295);
+	var CSSCore = __webpack_require__(301);
+	var ReactTransitionEvents = __webpack_require__(302);
 
 	var onlyChild = __webpack_require__(39);
 
@@ -15999,7 +16013,7 @@ var showChatTemplate =
 	module.exports = ReactCSSTransitionGroupChild;
 
 /***/ },
-/* 166 */
+/* 173 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -16017,16 +16031,16 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactDefaultInjection = __webpack_require__(170);
-	var ReactMount = __webpack_require__(286);
-	var ReactReconciler = __webpack_require__(189);
-	var ReactUpdates = __webpack_require__(186);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactDefaultInjection = __webpack_require__(177);
+	var ReactMount = __webpack_require__(293);
+	var ReactReconciler = __webpack_require__(196);
+	var ReactUpdates = __webpack_require__(193);
 	var ReactVersion = __webpack_require__(38);
 
-	var findDOMNode = __webpack_require__(291);
-	var getNativeComponentFromComposite = __webpack_require__(292);
-	var renderSubtreeIntoContainer = __webpack_require__(293);
+	var findDOMNode = __webpack_require__(298);
+	var getNativeComponentFromComposite = __webpack_require__(299);
+	var renderSubtreeIntoContainer = __webpack_require__(300);
 	var warning = __webpack_require__(12);
 
 	ReactDefaultInjection.inject();
@@ -16106,7 +16120,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 167 */
+/* 174 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -16122,8 +16136,8 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMProperty = __webpack_require__(168);
-	var ReactDOMComponentFlags = __webpack_require__(169);
+	var DOMProperty = __webpack_require__(175);
+	var ReactDOMComponentFlags = __webpack_require__(176);
 
 	var invariant = __webpack_require__(9);
 
@@ -16298,7 +16312,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 168 */
+/* 175 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -16517,7 +16531,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 169 */
+/* 176 */
 /***/ function(module, exports) {
 
 	/**
@@ -16540,7 +16554,7 @@ var showChatTemplate =
 	module.exports = ReactDOMComponentFlags;
 
 /***/ },
-/* 170 */
+/* 177 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -16556,24 +16570,24 @@ var showChatTemplate =
 
 	'use strict';
 
-	var BeforeInputEventPlugin = __webpack_require__(171);
-	var ChangeEventPlugin = __webpack_require__(185);
-	var DefaultEventPluginOrder = __webpack_require__(196);
-	var EnterLeaveEventPlugin = __webpack_require__(197);
-	var HTMLDOMPropertyConfig = __webpack_require__(202);
-	var ReactComponentBrowserEnvironment = __webpack_require__(203);
-	var ReactDOMComponent = __webpack_require__(217);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactDOMEmptyComponent = __webpack_require__(257);
-	var ReactDOMTreeTraversal = __webpack_require__(258);
-	var ReactDOMTextComponent = __webpack_require__(259);
-	var ReactDefaultBatchingStrategy = __webpack_require__(260);
-	var ReactEventListener = __webpack_require__(261);
-	var ReactInjection = __webpack_require__(264);
-	var ReactReconcileTransaction = __webpack_require__(265);
-	var SVGDOMPropertyConfig = __webpack_require__(273);
-	var SelectEventPlugin = __webpack_require__(274);
-	var SimpleEventPlugin = __webpack_require__(275);
+	var BeforeInputEventPlugin = __webpack_require__(178);
+	var ChangeEventPlugin = __webpack_require__(192);
+	var DefaultEventPluginOrder = __webpack_require__(203);
+	var EnterLeaveEventPlugin = __webpack_require__(204);
+	var HTMLDOMPropertyConfig = __webpack_require__(209);
+	var ReactComponentBrowserEnvironment = __webpack_require__(210);
+	var ReactDOMComponent = __webpack_require__(224);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactDOMEmptyComponent = __webpack_require__(264);
+	var ReactDOMTreeTraversal = __webpack_require__(265);
+	var ReactDOMTextComponent = __webpack_require__(266);
+	var ReactDefaultBatchingStrategy = __webpack_require__(267);
+	var ReactEventListener = __webpack_require__(268);
+	var ReactInjection = __webpack_require__(271);
+	var ReactReconcileTransaction = __webpack_require__(272);
+	var SVGDOMPropertyConfig = __webpack_require__(280);
+	var SelectEventPlugin = __webpack_require__(281);
+	var SimpleEventPlugin = __webpack_require__(282);
 
 	var alreadyInjected = false;
 
@@ -16629,7 +16643,7 @@ var showChatTemplate =
 	};
 
 /***/ },
-/* 171 */
+/* 178 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -16645,12 +16659,12 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventConstants = __webpack_require__(172);
-	var EventPropagators = __webpack_require__(173);
+	var EventConstants = __webpack_require__(179);
+	var EventPropagators = __webpack_require__(180);
 	var ExecutionEnvironment = __webpack_require__(22);
-	var FallbackCompositionState = __webpack_require__(180);
-	var SyntheticCompositionEvent = __webpack_require__(182);
-	var SyntheticInputEvent = __webpack_require__(184);
+	var FallbackCompositionState = __webpack_require__(187);
+	var SyntheticCompositionEvent = __webpack_require__(189);
+	var SyntheticInputEvent = __webpack_require__(191);
 
 	var keyOf = __webpack_require__(33);
 
@@ -17022,7 +17036,7 @@ var showChatTemplate =
 	module.exports = BeforeInputEventPlugin;
 
 /***/ },
-/* 172 */
+/* 179 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -17124,7 +17138,7 @@ var showChatTemplate =
 	module.exports = EventConstants;
 
 /***/ },
-/* 173 */
+/* 180 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -17140,12 +17154,12 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventConstants = __webpack_require__(172);
-	var EventPluginHub = __webpack_require__(174);
-	var EventPluginUtils = __webpack_require__(176);
+	var EventConstants = __webpack_require__(179);
+	var EventPluginHub = __webpack_require__(181);
+	var EventPluginUtils = __webpack_require__(183);
 
-	var accumulateInto = __webpack_require__(178);
-	var forEachAccumulated = __webpack_require__(179);
+	var accumulateInto = __webpack_require__(185);
+	var forEachAccumulated = __webpack_require__(186);
 	var warning = __webpack_require__(12);
 
 	var PropagationPhases = EventConstants.PropagationPhases;
@@ -17267,7 +17281,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 174 */
+/* 181 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -17283,12 +17297,12 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventPluginRegistry = __webpack_require__(175);
-	var EventPluginUtils = __webpack_require__(176);
-	var ReactErrorUtils = __webpack_require__(177);
+	var EventPluginRegistry = __webpack_require__(182);
+	var EventPluginUtils = __webpack_require__(183);
+	var ReactErrorUtils = __webpack_require__(184);
 
-	var accumulateInto = __webpack_require__(178);
-	var forEachAccumulated = __webpack_require__(179);
+	var accumulateInto = __webpack_require__(185);
+	var forEachAccumulated = __webpack_require__(186);
 	var invariant = __webpack_require__(9);
 
 	/**
@@ -17508,7 +17522,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 175 */
+/* 182 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -17755,7 +17769,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 176 */
+/* 183 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -17771,8 +17785,8 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventConstants = __webpack_require__(172);
-	var ReactErrorUtils = __webpack_require__(177);
+	var EventConstants = __webpack_require__(179);
+	var ReactErrorUtils = __webpack_require__(184);
 
 	var invariant = __webpack_require__(9);
 	var warning = __webpack_require__(12);
@@ -17988,7 +18002,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 177 */
+/* 184 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -18070,7 +18084,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 178 */
+/* 185 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -18135,7 +18149,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 179 */
+/* 186 */
 /***/ function(module, exports) {
 
 	/**
@@ -18170,7 +18184,7 @@ var showChatTemplate =
 	module.exports = forEachAccumulated;
 
 /***/ },
-/* 180 */
+/* 187 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -18190,7 +18204,7 @@ var showChatTemplate =
 
 	var PooledClass = __webpack_require__(8);
 
-	var getTextContentAccessor = __webpack_require__(181);
+	var getTextContentAccessor = __webpack_require__(188);
 
 	/**
 	 * This helper class stores information about text content of a target node,
@@ -18270,7 +18284,7 @@ var showChatTemplate =
 	module.exports = FallbackCompositionState;
 
 /***/ },
-/* 181 */
+/* 188 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -18308,7 +18322,7 @@ var showChatTemplate =
 	module.exports = getTextContentAccessor;
 
 /***/ },
-/* 182 */
+/* 189 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -18324,7 +18338,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticEvent = __webpack_require__(183);
+	var SyntheticEvent = __webpack_require__(190);
 
 	/**
 	 * @interface Event
@@ -18349,7 +18363,7 @@ var showChatTemplate =
 	module.exports = SyntheticCompositionEvent;
 
 /***/ },
-/* 183 */
+/* 190 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -18616,7 +18630,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 184 */
+/* 191 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -18632,7 +18646,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticEvent = __webpack_require__(183);
+	var SyntheticEvent = __webpack_require__(190);
 
 	/**
 	 * @interface Event
@@ -18658,7 +18672,7 @@ var showChatTemplate =
 	module.exports = SyntheticInputEvent;
 
 /***/ },
-/* 185 */
+/* 192 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -18674,17 +18688,17 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventConstants = __webpack_require__(172);
-	var EventPluginHub = __webpack_require__(174);
-	var EventPropagators = __webpack_require__(173);
+	var EventConstants = __webpack_require__(179);
+	var EventPluginHub = __webpack_require__(181);
+	var EventPropagators = __webpack_require__(180);
 	var ExecutionEnvironment = __webpack_require__(22);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactUpdates = __webpack_require__(186);
-	var SyntheticEvent = __webpack_require__(183);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactUpdates = __webpack_require__(193);
+	var SyntheticEvent = __webpack_require__(190);
 
-	var getEventTarget = __webpack_require__(193);
-	var isEventSupported = __webpack_require__(194);
-	var isTextInputElement = __webpack_require__(195);
+	var getEventTarget = __webpack_require__(200);
+	var isEventSupported = __webpack_require__(201);
+	var isTextInputElement = __webpack_require__(202);
 	var keyOf = __webpack_require__(33);
 
 	var topLevelTypes = EventConstants.topLevelTypes;
@@ -18988,7 +19002,7 @@ var showChatTemplate =
 	module.exports = ChangeEventPlugin;
 
 /***/ },
-/* 186 */
+/* 193 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -19006,12 +19020,12 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var CallbackQueue = __webpack_require__(187);
+	var CallbackQueue = __webpack_require__(194);
 	var PooledClass = __webpack_require__(8);
-	var ReactFeatureFlags = __webpack_require__(188);
+	var ReactFeatureFlags = __webpack_require__(195);
 	var ReactInstrumentation = __webpack_require__(20);
-	var ReactReconciler = __webpack_require__(189);
-	var Transaction = __webpack_require__(192);
+	var ReactReconciler = __webpack_require__(196);
+	var Transaction = __webpack_require__(199);
 
 	var invariant = __webpack_require__(9);
 
@@ -19253,7 +19267,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 187 */
+/* 194 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -19364,7 +19378,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 188 */
+/* 195 */
 /***/ function(module, exports) {
 
 	/**
@@ -19390,7 +19404,7 @@ var showChatTemplate =
 	module.exports = ReactFeatureFlags;
 
 /***/ },
-/* 189 */
+/* 196 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -19406,7 +19420,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactRef = __webpack_require__(190);
+	var ReactRef = __webpack_require__(197);
 	var ReactInstrumentation = __webpack_require__(20);
 
 	var invariant = __webpack_require__(9);
@@ -19567,7 +19581,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 190 */
+/* 197 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -19583,7 +19597,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactOwner = __webpack_require__(191);
+	var ReactOwner = __webpack_require__(198);
 
 	var ReactRef = {};
 
@@ -19650,7 +19664,7 @@ var showChatTemplate =
 	module.exports = ReactRef;
 
 /***/ },
-/* 191 */
+/* 198 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -19748,7 +19762,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 192 */
+/* 199 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -19985,7 +19999,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 193 */
+/* 200 */
 /***/ function(module, exports) {
 
 	/**
@@ -20025,7 +20039,7 @@ var showChatTemplate =
 	module.exports = getEventTarget;
 
 /***/ },
-/* 194 */
+/* 201 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20090,7 +20104,7 @@ var showChatTemplate =
 	module.exports = isEventSupported;
 
 /***/ },
-/* 195 */
+/* 202 */
 /***/ function(module, exports) {
 
 	/**
@@ -20136,7 +20150,7 @@ var showChatTemplate =
 	module.exports = isTextInputElement;
 
 /***/ },
-/* 196 */
+/* 203 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20168,7 +20182,7 @@ var showChatTemplate =
 	module.exports = DefaultEventPluginOrder;
 
 /***/ },
-/* 197 */
+/* 204 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20184,10 +20198,10 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventConstants = __webpack_require__(172);
-	var EventPropagators = __webpack_require__(173);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var SyntheticMouseEvent = __webpack_require__(198);
+	var EventConstants = __webpack_require__(179);
+	var EventPropagators = __webpack_require__(180);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var SyntheticMouseEvent = __webpack_require__(205);
 
 	var keyOf = __webpack_require__(33);
 
@@ -20278,7 +20292,7 @@ var showChatTemplate =
 	module.exports = EnterLeaveEventPlugin;
 
 /***/ },
-/* 198 */
+/* 205 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20294,10 +20308,10 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticUIEvent = __webpack_require__(199);
-	var ViewportMetrics = __webpack_require__(200);
+	var SyntheticUIEvent = __webpack_require__(206);
+	var ViewportMetrics = __webpack_require__(207);
 
-	var getEventModifierState = __webpack_require__(201);
+	var getEventModifierState = __webpack_require__(208);
 
 	/**
 	 * @interface MouseEvent
@@ -20355,7 +20369,7 @@ var showChatTemplate =
 	module.exports = SyntheticMouseEvent;
 
 /***/ },
-/* 199 */
+/* 206 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20371,9 +20385,9 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticEvent = __webpack_require__(183);
+	var SyntheticEvent = __webpack_require__(190);
 
-	var getEventTarget = __webpack_require__(193);
+	var getEventTarget = __webpack_require__(200);
 
 	/**
 	 * @interface UIEvent
@@ -20419,7 +20433,7 @@ var showChatTemplate =
 	module.exports = SyntheticUIEvent;
 
 /***/ },
-/* 200 */
+/* 207 */
 /***/ function(module, exports) {
 
 	/**
@@ -20451,7 +20465,7 @@ var showChatTemplate =
 	module.exports = ViewportMetrics;
 
 /***/ },
-/* 201 */
+/* 208 */
 /***/ function(module, exports) {
 
 	/**
@@ -20499,7 +20513,7 @@ var showChatTemplate =
 	module.exports = getEventModifierState;
 
 /***/ },
-/* 202 */
+/* 209 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20515,7 +20529,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMProperty = __webpack_require__(168);
+	var DOMProperty = __webpack_require__(175);
 
 	var MUST_USE_PROPERTY = DOMProperty.injection.MUST_USE_PROPERTY;
 	var HAS_BOOLEAN_VALUE = DOMProperty.injection.HAS_BOOLEAN_VALUE;
@@ -20713,7 +20727,7 @@ var showChatTemplate =
 	module.exports = HTMLDOMPropertyConfig;
 
 /***/ },
-/* 203 */
+/* 210 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20729,8 +20743,8 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMChildrenOperations = __webpack_require__(204);
-	var ReactDOMIDOperations = __webpack_require__(216);
+	var DOMChildrenOperations = __webpack_require__(211);
+	var ReactDOMIDOperations = __webpack_require__(223);
 
 	/**
 	 * Abstracts away all functionality of the reconciler that requires knowledge of
@@ -20757,7 +20771,7 @@ var showChatTemplate =
 	module.exports = ReactComponentBrowserEnvironment;
 
 /***/ },
-/* 204 */
+/* 211 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -20773,15 +20787,15 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMLazyTree = __webpack_require__(205);
-	var Danger = __webpack_require__(211);
-	var ReactMultiChildUpdateTypes = __webpack_require__(215);
-	var ReactDOMComponentTree = __webpack_require__(167);
+	var DOMLazyTree = __webpack_require__(212);
+	var Danger = __webpack_require__(218);
+	var ReactMultiChildUpdateTypes = __webpack_require__(222);
+	var ReactDOMComponentTree = __webpack_require__(174);
 	var ReactInstrumentation = __webpack_require__(20);
 
-	var createMicrosoftUnsafeLocalFunction = __webpack_require__(207);
-	var setInnerHTML = __webpack_require__(210);
-	var setTextContent = __webpack_require__(208);
+	var createMicrosoftUnsafeLocalFunction = __webpack_require__(214);
+	var setInnerHTML = __webpack_require__(217);
+	var setTextContent = __webpack_require__(215);
 
 	function getNodeAfter(parentNode, node) {
 	  // Special case for text components, which return [open, close] comments
@@ -20957,7 +20971,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 205 */
+/* 212 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -20973,10 +20987,10 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMNamespaces = __webpack_require__(206);
+	var DOMNamespaces = __webpack_require__(213);
 
-	var createMicrosoftUnsafeLocalFunction = __webpack_require__(207);
-	var setTextContent = __webpack_require__(208);
+	var createMicrosoftUnsafeLocalFunction = __webpack_require__(214);
+	var setTextContent = __webpack_require__(215);
 
 	var ELEMENT_NODE_TYPE = 1;
 	var DOCUMENT_FRAGMENT_NODE_TYPE = 11;
@@ -21079,7 +21093,7 @@ var showChatTemplate =
 	module.exports = DOMLazyTree;
 
 /***/ },
-/* 206 */
+/* 213 */
 /***/ function(module, exports) {
 
 	/**
@@ -21104,7 +21118,7 @@ var showChatTemplate =
 	module.exports = DOMNamespaces;
 
 /***/ },
-/* 207 */
+/* 214 */
 /***/ function(module, exports) {
 
 	/**
@@ -21141,7 +21155,7 @@ var showChatTemplate =
 	module.exports = createMicrosoftUnsafeLocalFunction;
 
 /***/ },
-/* 208 */
+/* 215 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -21158,8 +21172,8 @@ var showChatTemplate =
 	'use strict';
 
 	var ExecutionEnvironment = __webpack_require__(22);
-	var escapeTextContentForBrowser = __webpack_require__(209);
-	var setInnerHTML = __webpack_require__(210);
+	var escapeTextContentForBrowser = __webpack_require__(216);
+	var setInnerHTML = __webpack_require__(217);
 
 	/**
 	 * Set the textContent property of a node, ensuring that whitespace is preserved
@@ -21186,7 +21200,7 @@ var showChatTemplate =
 	module.exports = setTextContent;
 
 /***/ },
-/* 209 */
+/* 216 */
 /***/ function(module, exports) {
 
 	/**
@@ -21229,7 +21243,7 @@ var showChatTemplate =
 	module.exports = escapeTextContentForBrowser;
 
 /***/ },
-/* 210 */
+/* 217 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -21250,7 +21264,7 @@ var showChatTemplate =
 	var WHITESPACE_TEST = /^[ \r\n\t\f]/;
 	var NONVISIBLE_TEST = /<(!--|link|noscript|meta|script|style)[ \r\n\t\f\/>]/;
 
-	var createMicrosoftUnsafeLocalFunction = __webpack_require__(207);
+	var createMicrosoftUnsafeLocalFunction = __webpack_require__(214);
 
 	/**
 	 * Set the innerHTML property of a node, ensuring that whitespace is preserved
@@ -21316,7 +21330,7 @@ var showChatTemplate =
 	module.exports = setInnerHTML;
 
 /***/ },
-/* 211 */
+/* 218 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -21332,12 +21346,12 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMLazyTree = __webpack_require__(205);
+	var DOMLazyTree = __webpack_require__(212);
 	var ExecutionEnvironment = __webpack_require__(22);
 
-	var createNodesFromMarkup = __webpack_require__(212);
+	var createNodesFromMarkup = __webpack_require__(219);
 	var emptyFunction = __webpack_require__(13);
-	var getMarkupWrap = __webpack_require__(214);
+	var getMarkupWrap = __webpack_require__(221);
 	var invariant = __webpack_require__(9);
 
 	var OPEN_TAG_NAME_EXP = /^(<[^ \/>]+)/;
@@ -21466,7 +21480,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 212 */
+/* 219 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -21486,8 +21500,8 @@ var showChatTemplate =
 
 	var ExecutionEnvironment = __webpack_require__(22);
 
-	var createArrayFromMixed = __webpack_require__(213);
-	var getMarkupWrap = __webpack_require__(214);
+	var createArrayFromMixed = __webpack_require__(220);
+	var getMarkupWrap = __webpack_require__(221);
 	var invariant = __webpack_require__(9);
 
 	/**
@@ -21555,7 +21569,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 213 */
+/* 220 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -21687,7 +21701,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 214 */
+/* 221 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -21787,7 +21801,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 215 */
+/* 222 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -21824,7 +21838,7 @@ var showChatTemplate =
 	module.exports = ReactMultiChildUpdateTypes;
 
 /***/ },
-/* 216 */
+/* 223 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -21840,8 +21854,8 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMChildrenOperations = __webpack_require__(204);
-	var ReactDOMComponentTree = __webpack_require__(167);
+	var DOMChildrenOperations = __webpack_require__(211);
+	var ReactDOMComponentTree = __webpack_require__(174);
 
 	/**
 	 * Operations used to process updates to DOM nodes.
@@ -21863,7 +21877,7 @@ var showChatTemplate =
 	module.exports = ReactDOMIDOperations;
 
 /***/ },
-/* 217 */
+/* 224 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -21883,35 +21897,35 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var AutoFocusUtils = __webpack_require__(218);
-	var CSSPropertyOperations = __webpack_require__(220);
-	var DOMLazyTree = __webpack_require__(205);
-	var DOMNamespaces = __webpack_require__(206);
-	var DOMProperty = __webpack_require__(168);
-	var DOMPropertyOperations = __webpack_require__(228);
-	var EventConstants = __webpack_require__(172);
-	var EventPluginHub = __webpack_require__(174);
-	var EventPluginRegistry = __webpack_require__(175);
-	var ReactBrowserEventEmitter = __webpack_require__(233);
-	var ReactComponentBrowserEnvironment = __webpack_require__(203);
-	var ReactDOMButton = __webpack_require__(236);
-	var ReactDOMComponentFlags = __webpack_require__(169);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactDOMInput = __webpack_require__(238);
-	var ReactDOMOption = __webpack_require__(240);
-	var ReactDOMSelect = __webpack_require__(241);
-	var ReactDOMTextarea = __webpack_require__(242);
+	var AutoFocusUtils = __webpack_require__(225);
+	var CSSPropertyOperations = __webpack_require__(227);
+	var DOMLazyTree = __webpack_require__(212);
+	var DOMNamespaces = __webpack_require__(213);
+	var DOMProperty = __webpack_require__(175);
+	var DOMPropertyOperations = __webpack_require__(235);
+	var EventConstants = __webpack_require__(179);
+	var EventPluginHub = __webpack_require__(181);
+	var EventPluginRegistry = __webpack_require__(182);
+	var ReactBrowserEventEmitter = __webpack_require__(240);
+	var ReactComponentBrowserEnvironment = __webpack_require__(210);
+	var ReactDOMButton = __webpack_require__(243);
+	var ReactDOMComponentFlags = __webpack_require__(176);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactDOMInput = __webpack_require__(245);
+	var ReactDOMOption = __webpack_require__(247);
+	var ReactDOMSelect = __webpack_require__(248);
+	var ReactDOMTextarea = __webpack_require__(249);
 	var ReactInstrumentation = __webpack_require__(20);
-	var ReactMultiChild = __webpack_require__(243);
-	var ReactServerRenderingTransaction = __webpack_require__(254);
+	var ReactMultiChild = __webpack_require__(250);
+	var ReactServerRenderingTransaction = __webpack_require__(261);
 
 	var emptyFunction = __webpack_require__(13);
-	var escapeTextContentForBrowser = __webpack_require__(209);
+	var escapeTextContentForBrowser = __webpack_require__(216);
 	var invariant = __webpack_require__(9);
-	var isEventSupported = __webpack_require__(194);
+	var isEventSupported = __webpack_require__(201);
 	var keyOf = __webpack_require__(33);
-	var shallowEqual = __webpack_require__(255);
-	var validateDOMNesting = __webpack_require__(256);
+	var shallowEqual = __webpack_require__(262);
+	var validateDOMNesting = __webpack_require__(263);
 	var warning = __webpack_require__(12);
 
 	var Flags = ReactDOMComponentFlags;
@@ -22818,7 +22832,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 218 */
+/* 225 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -22834,9 +22848,9 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactDOMComponentTree = __webpack_require__(167);
+	var ReactDOMComponentTree = __webpack_require__(174);
 
-	var focusNode = __webpack_require__(219);
+	var focusNode = __webpack_require__(226);
 
 	var AutoFocusUtils = {
 	  focusDOMComponent: function () {
@@ -22847,7 +22861,7 @@ var showChatTemplate =
 	module.exports = AutoFocusUtils;
 
 /***/ },
-/* 219 */
+/* 226 */
 /***/ function(module, exports) {
 
 	/**
@@ -22878,7 +22892,7 @@ var showChatTemplate =
 	module.exports = focusNode;
 
 /***/ },
-/* 220 */
+/* 227 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -22894,14 +22908,14 @@ var showChatTemplate =
 
 	'use strict';
 
-	var CSSProperty = __webpack_require__(221);
+	var CSSProperty = __webpack_require__(228);
 	var ExecutionEnvironment = __webpack_require__(22);
 	var ReactInstrumentation = __webpack_require__(20);
 
-	var camelizeStyleName = __webpack_require__(222);
-	var dangerousStyleValue = __webpack_require__(224);
-	var hyphenateStyleName = __webpack_require__(225);
-	var memoizeStringOnly = __webpack_require__(227);
+	var camelizeStyleName = __webpack_require__(229);
+	var dangerousStyleValue = __webpack_require__(231);
+	var hyphenateStyleName = __webpack_require__(232);
+	var memoizeStringOnly = __webpack_require__(234);
 	var warning = __webpack_require__(12);
 
 	var processStyleName = memoizeStringOnly(function (styleName) {
@@ -23089,7 +23103,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 221 */
+/* 228 */
 /***/ function(module, exports) {
 
 	/**
@@ -23242,7 +23256,7 @@ var showChatTemplate =
 	module.exports = CSSProperty;
 
 /***/ },
-/* 222 */
+/* 229 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -23258,7 +23272,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var camelize = __webpack_require__(223);
+	var camelize = __webpack_require__(230);
 
 	var msPattern = /^-ms-/;
 
@@ -23286,7 +23300,7 @@ var showChatTemplate =
 	module.exports = camelizeStyleName;
 
 /***/ },
-/* 223 */
+/* 230 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -23322,7 +23336,7 @@ var showChatTemplate =
 	module.exports = camelize;
 
 /***/ },
-/* 224 */
+/* 231 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -23338,7 +23352,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var CSSProperty = __webpack_require__(221);
+	var CSSProperty = __webpack_require__(228);
 	var warning = __webpack_require__(12);
 
 	var isUnitlessNumber = CSSProperty.isUnitlessNumber;
@@ -23405,7 +23419,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 225 */
+/* 232 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -23421,7 +23435,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var hyphenate = __webpack_require__(226);
+	var hyphenate = __webpack_require__(233);
 
 	var msPattern = /^ms-/;
 
@@ -23448,7 +23462,7 @@ var showChatTemplate =
 	module.exports = hyphenateStyleName;
 
 /***/ },
-/* 226 */
+/* 233 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -23485,7 +23499,7 @@ var showChatTemplate =
 	module.exports = hyphenate;
 
 /***/ },
-/* 227 */
+/* 234 */
 /***/ function(module, exports) {
 
 	/**
@@ -23519,7 +23533,7 @@ var showChatTemplate =
 	module.exports = memoizeStringOnly;
 
 /***/ },
-/* 228 */
+/* 235 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -23535,12 +23549,12 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMProperty = __webpack_require__(168);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactDOMInstrumentation = __webpack_require__(229);
+	var DOMProperty = __webpack_require__(175);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactDOMInstrumentation = __webpack_require__(236);
 	var ReactInstrumentation = __webpack_require__(20);
 
-	var quoteAttributeValueForBrowser = __webpack_require__(232);
+	var quoteAttributeValueForBrowser = __webpack_require__(239);
 	var warning = __webpack_require__(12);
 
 	var VALID_ATTRIBUTE_NAME_REGEX = new RegExp('^[' + DOMProperty.ATTRIBUTE_NAME_START_CHAR + '][' + DOMProperty.ATTRIBUTE_NAME_CHAR + ']*$');
@@ -23747,7 +23761,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 229 */
+/* 236 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -23763,12 +23777,12 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactDOMDebugTool = __webpack_require__(230);
+	var ReactDOMDebugTool = __webpack_require__(237);
 
 	module.exports = { debugTool: ReactDOMDebugTool };
 
 /***/ },
-/* 230 */
+/* 237 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -23784,7 +23798,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactDOMUnknownPropertyDevtool = __webpack_require__(231);
+	var ReactDOMUnknownPropertyDevtool = __webpack_require__(238);
 
 	var warning = __webpack_require__(12);
 
@@ -23835,7 +23849,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 231 */
+/* 238 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -23851,8 +23865,8 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMProperty = __webpack_require__(168);
-	var EventPluginRegistry = __webpack_require__(175);
+	var DOMProperty = __webpack_require__(175);
+	var EventPluginRegistry = __webpack_require__(182);
 
 	var warning = __webpack_require__(12);
 
@@ -23905,7 +23919,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 232 */
+/* 239 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -23921,7 +23935,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var escapeTextContentForBrowser = __webpack_require__(209);
+	var escapeTextContentForBrowser = __webpack_require__(216);
 
 	/**
 	 * Escapes attribute value to prevent scripting attacks.
@@ -23936,7 +23950,7 @@ var showChatTemplate =
 	module.exports = quoteAttributeValueForBrowser;
 
 /***/ },
-/* 233 */
+/* 240 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -23954,13 +23968,13 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var EventConstants = __webpack_require__(172);
-	var EventPluginRegistry = __webpack_require__(175);
-	var ReactEventEmitterMixin = __webpack_require__(234);
-	var ViewportMetrics = __webpack_require__(200);
+	var EventConstants = __webpack_require__(179);
+	var EventPluginRegistry = __webpack_require__(182);
+	var ReactEventEmitterMixin = __webpack_require__(241);
+	var ViewportMetrics = __webpack_require__(207);
 
-	var getVendorPrefixedEventName = __webpack_require__(235);
-	var isEventSupported = __webpack_require__(194);
+	var getVendorPrefixedEventName = __webpack_require__(242);
+	var isEventSupported = __webpack_require__(201);
 
 	/**
 	 * Summary of `ReactBrowserEventEmitter` event handling:
@@ -24258,7 +24272,7 @@ var showChatTemplate =
 	module.exports = ReactBrowserEventEmitter;
 
 /***/ },
-/* 234 */
+/* 241 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -24274,7 +24288,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventPluginHub = __webpack_require__(174);
+	var EventPluginHub = __webpack_require__(181);
 
 	function runEventQueueInBatch(events) {
 	  EventPluginHub.enqueueEvents(events);
@@ -24296,7 +24310,7 @@ var showChatTemplate =
 	module.exports = ReactEventEmitterMixin;
 
 /***/ },
-/* 235 */
+/* 242 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -24402,7 +24416,7 @@ var showChatTemplate =
 	module.exports = getVendorPrefixedEventName;
 
 /***/ },
-/* 236 */
+/* 243 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -24418,7 +24432,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DisabledInputUtils = __webpack_require__(237);
+	var DisabledInputUtils = __webpack_require__(244);
 
 	/**
 	 * Implements a <button> native component that does not receive mouse events
@@ -24431,7 +24445,7 @@ var showChatTemplate =
 	module.exports = ReactDOMButton;
 
 /***/ },
-/* 237 */
+/* 244 */
 /***/ function(module, exports) {
 
 	/**
@@ -24486,7 +24500,7 @@ var showChatTemplate =
 	module.exports = DisabledInputUtils;
 
 /***/ },
-/* 238 */
+/* 245 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -24504,11 +24518,11 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var DisabledInputUtils = __webpack_require__(237);
-	var DOMPropertyOperations = __webpack_require__(228);
-	var LinkedValueUtils = __webpack_require__(239);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactUpdates = __webpack_require__(186);
+	var DisabledInputUtils = __webpack_require__(244);
+	var DOMPropertyOperations = __webpack_require__(235);
+	var LinkedValueUtils = __webpack_require__(246);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactUpdates = __webpack_require__(193);
 
 	var invariant = __webpack_require__(9);
 	var warning = __webpack_require__(12);
@@ -24698,7 +24712,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 239 */
+/* 246 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -24837,7 +24851,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 240 */
+/* 247 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -24856,8 +24870,8 @@ var showChatTemplate =
 	var _assign = __webpack_require__(6);
 
 	var ReactChildren = __webpack_require__(7);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactDOMSelect = __webpack_require__(241);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactDOMSelect = __webpack_require__(248);
 
 	var warning = __webpack_require__(12);
 
@@ -24952,7 +24966,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 241 */
+/* 248 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -24970,10 +24984,10 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var DisabledInputUtils = __webpack_require__(237);
-	var LinkedValueUtils = __webpack_require__(239);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactUpdates = __webpack_require__(186);
+	var DisabledInputUtils = __webpack_require__(244);
+	var LinkedValueUtils = __webpack_require__(246);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactUpdates = __webpack_require__(193);
 
 	var warning = __webpack_require__(12);
 
@@ -25171,7 +25185,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 242 */
+/* 249 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -25189,11 +25203,11 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var DisabledInputUtils = __webpack_require__(237);
-	var DOMPropertyOperations = __webpack_require__(228);
-	var LinkedValueUtils = __webpack_require__(239);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactUpdates = __webpack_require__(186);
+	var DisabledInputUtils = __webpack_require__(244);
+	var DOMPropertyOperations = __webpack_require__(235);
+	var LinkedValueUtils = __webpack_require__(246);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactUpdates = __webpack_require__(193);
 
 	var invariant = __webpack_require__(9);
 	var warning = __webpack_require__(12);
@@ -25319,7 +25333,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 243 */
+/* 250 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -25335,16 +25349,16 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactComponentEnvironment = __webpack_require__(244);
+	var ReactComponentEnvironment = __webpack_require__(251);
 	var ReactInstrumentation = __webpack_require__(20);
-	var ReactMultiChildUpdateTypes = __webpack_require__(215);
+	var ReactMultiChildUpdateTypes = __webpack_require__(222);
 
 	var ReactCurrentOwner = __webpack_require__(11);
-	var ReactReconciler = __webpack_require__(189);
-	var ReactChildReconciler = __webpack_require__(245);
+	var ReactReconciler = __webpack_require__(196);
+	var ReactChildReconciler = __webpack_require__(252);
 
 	var emptyFunction = __webpack_require__(13);
-	var flattenChildren = __webpack_require__(164);
+	var flattenChildren = __webpack_require__(171);
 	var invariant = __webpack_require__(9);
 
 	/**
@@ -25748,7 +25762,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 244 */
+/* 251 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -25805,7 +25819,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 245 */
+/* 252 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -25821,11 +25835,11 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactReconciler = __webpack_require__(189);
+	var ReactReconciler = __webpack_require__(196);
 
-	var instantiateReactComponent = __webpack_require__(246);
+	var instantiateReactComponent = __webpack_require__(253);
 	var KeyEscapeUtils = __webpack_require__(17);
-	var shouldUpdateReactComponent = __webpack_require__(251);
+	var shouldUpdateReactComponent = __webpack_require__(258);
 	var traverseAllChildren = __webpack_require__(15);
 	var warning = __webpack_require__(12);
 
@@ -25936,7 +25950,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 246 */
+/* 253 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -25954,9 +25968,9 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var ReactCompositeComponent = __webpack_require__(247);
-	var ReactEmptyComponent = __webpack_require__(252);
-	var ReactNativeComponent = __webpack_require__(253);
+	var ReactCompositeComponent = __webpack_require__(254);
+	var ReactEmptyComponent = __webpack_require__(259);
+	var ReactNativeComponent = __webpack_require__(260);
 	var ReactInstrumentation = __webpack_require__(20);
 
 	var invariant = __webpack_require__(9);
@@ -26086,7 +26100,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 247 */
+/* 254 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -26104,21 +26118,21 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var ReactComponentEnvironment = __webpack_require__(244);
+	var ReactComponentEnvironment = __webpack_require__(251);
 	var ReactCurrentOwner = __webpack_require__(11);
 	var ReactElement = __webpack_require__(10);
-	var ReactErrorUtils = __webpack_require__(177);
-	var ReactInstanceMap = __webpack_require__(248);
+	var ReactErrorUtils = __webpack_require__(184);
+	var ReactInstanceMap = __webpack_require__(255);
 	var ReactInstrumentation = __webpack_require__(20);
-	var ReactNodeTypes = __webpack_require__(249);
+	var ReactNodeTypes = __webpack_require__(256);
 	var ReactPropTypeLocations = __webpack_require__(30);
 	var ReactPropTypeLocationNames = __webpack_require__(32);
-	var ReactReconciler = __webpack_require__(189);
-	var ReactUpdateQueue = __webpack_require__(250);
+	var ReactReconciler = __webpack_require__(196);
+	var ReactUpdateQueue = __webpack_require__(257);
 
 	var emptyObject = __webpack_require__(28);
 	var invariant = __webpack_require__(9);
-	var shouldUpdateReactComponent = __webpack_require__(251);
+	var shouldUpdateReactComponent = __webpack_require__(258);
 	var warning = __webpack_require__(12);
 
 	function getDeclarationErrorAddendum(component) {
@@ -27015,7 +27029,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 248 */
+/* 255 */
 /***/ function(module, exports) {
 
 	/**
@@ -27068,7 +27082,7 @@ var showChatTemplate =
 	module.exports = ReactInstanceMap;
 
 /***/ },
-/* 249 */
+/* 256 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -27111,7 +27125,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 250 */
+/* 257 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -27128,8 +27142,8 @@ var showChatTemplate =
 	'use strict';
 
 	var ReactCurrentOwner = __webpack_require__(11);
-	var ReactInstanceMap = __webpack_require__(248);
-	var ReactUpdates = __webpack_require__(186);
+	var ReactInstanceMap = __webpack_require__(255);
+	var ReactUpdates = __webpack_require__(193);
 
 	var invariant = __webpack_require__(9);
 	var warning = __webpack_require__(12);
@@ -27332,7 +27346,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 251 */
+/* 258 */
 /***/ function(module, exports) {
 
 	/**
@@ -27379,7 +27393,7 @@ var showChatTemplate =
 	module.exports = shouldUpdateReactComponent;
 
 /***/ },
-/* 252 */
+/* 259 */
 /***/ function(module, exports) {
 
 	/**
@@ -27414,7 +27428,7 @@ var showChatTemplate =
 	module.exports = ReactEmptyComponent;
 
 /***/ },
-/* 253 */
+/* 260 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -27515,7 +27529,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 254 */
+/* 261 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -27534,7 +27548,7 @@ var showChatTemplate =
 	var _assign = __webpack_require__(6);
 
 	var PooledClass = __webpack_require__(8);
-	var Transaction = __webpack_require__(192);
+	var Transaction = __webpack_require__(199);
 
 	/**
 	 * Executed within the scope of the `Transaction` instance. Consider these as
@@ -27593,7 +27607,7 @@ var showChatTemplate =
 	module.exports = ReactServerRenderingTransaction;
 
 /***/ },
-/* 255 */
+/* 262 */
 /***/ function(module, exports) {
 
 	/**
@@ -27665,7 +27679,7 @@ var showChatTemplate =
 	module.exports = shallowEqual;
 
 /***/ },
-/* 256 */
+/* 263 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -28040,7 +28054,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 257 */
+/* 264 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -28058,8 +28072,8 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var DOMLazyTree = __webpack_require__(205);
-	var ReactDOMComponentTree = __webpack_require__(167);
+	var DOMLazyTree = __webpack_require__(212);
+	var ReactDOMComponentTree = __webpack_require__(174);
 
 	var ReactDOMEmptyComponent = function (instantiate) {
 	  // ReactCompositeComponent uses this:
@@ -28105,7 +28119,7 @@ var showChatTemplate =
 	module.exports = ReactDOMEmptyComponent;
 
 /***/ },
-/* 258 */
+/* 265 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -28245,7 +28259,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 259 */
+/* 266 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -28263,14 +28277,14 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var DOMChildrenOperations = __webpack_require__(204);
-	var DOMLazyTree = __webpack_require__(205);
-	var ReactDOMComponentTree = __webpack_require__(167);
+	var DOMChildrenOperations = __webpack_require__(211);
+	var DOMLazyTree = __webpack_require__(212);
+	var ReactDOMComponentTree = __webpack_require__(174);
 	var ReactInstrumentation = __webpack_require__(20);
 
-	var escapeTextContentForBrowser = __webpack_require__(209);
+	var escapeTextContentForBrowser = __webpack_require__(216);
 	var invariant = __webpack_require__(9);
-	var validateDOMNesting = __webpack_require__(256);
+	var validateDOMNesting = __webpack_require__(263);
 
 	/**
 	 * Text nodes violate a couple assumptions that React makes about components:
@@ -28421,7 +28435,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 260 */
+/* 267 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -28439,8 +28453,8 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var ReactUpdates = __webpack_require__(186);
-	var Transaction = __webpack_require__(192);
+	var ReactUpdates = __webpack_require__(193);
+	var Transaction = __webpack_require__(199);
 
 	var emptyFunction = __webpack_require__(13);
 
@@ -28494,7 +28508,7 @@ var showChatTemplate =
 	module.exports = ReactDefaultBatchingStrategy;
 
 /***/ },
-/* 261 */
+/* 268 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -28512,14 +28526,14 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var EventListener = __webpack_require__(262);
+	var EventListener = __webpack_require__(269);
 	var ExecutionEnvironment = __webpack_require__(22);
 	var PooledClass = __webpack_require__(8);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactUpdates = __webpack_require__(186);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactUpdates = __webpack_require__(193);
 
-	var getEventTarget = __webpack_require__(193);
-	var getUnboundedScrollPosition = __webpack_require__(263);
+	var getEventTarget = __webpack_require__(200);
+	var getUnboundedScrollPosition = __webpack_require__(270);
 
 	/**
 	 * Find the deepest React component completely containing the root of the
@@ -28656,7 +28670,7 @@ var showChatTemplate =
 	module.exports = ReactEventListener;
 
 /***/ },
-/* 262 */
+/* 269 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -28745,7 +28759,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 263 */
+/* 270 */
 /***/ function(module, exports) {
 
 	/**
@@ -28773,10 +28787,10 @@ var showChatTemplate =
 	 */
 
 	function getUnboundedScrollPosition(scrollable) {
-	  if (scrollable === window) {
+	  if (scrollable.Window && scrollable instanceof scrollable.Window) {
 	    return {
-	      x: window.pageXOffset || document.documentElement.scrollLeft,
-	      y: window.pageYOffset || document.documentElement.scrollTop
+	      x: scrollable.pageXOffset || scrollable.document.documentElement.scrollLeft,
+	      y: scrollable.pageYOffset || scrollable.document.documentElement.scrollTop
 	    };
 	  }
 	  return {
@@ -28788,7 +28802,7 @@ var showChatTemplate =
 	module.exports = getUnboundedScrollPosition;
 
 /***/ },
-/* 264 */
+/* 271 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -28804,15 +28818,15 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMProperty = __webpack_require__(168);
-	var EventPluginHub = __webpack_require__(174);
-	var EventPluginUtils = __webpack_require__(176);
-	var ReactComponentEnvironment = __webpack_require__(244);
+	var DOMProperty = __webpack_require__(175);
+	var EventPluginHub = __webpack_require__(181);
+	var EventPluginUtils = __webpack_require__(183);
+	var ReactComponentEnvironment = __webpack_require__(251);
 	var ReactClass = __webpack_require__(29);
-	var ReactEmptyComponent = __webpack_require__(252);
-	var ReactBrowserEventEmitter = __webpack_require__(233);
-	var ReactNativeComponent = __webpack_require__(253);
-	var ReactUpdates = __webpack_require__(186);
+	var ReactEmptyComponent = __webpack_require__(259);
+	var ReactBrowserEventEmitter = __webpack_require__(240);
+	var ReactNativeComponent = __webpack_require__(260);
+	var ReactUpdates = __webpack_require__(193);
 
 	var ReactInjection = {
 	  Component: ReactComponentEnvironment.injection,
@@ -28829,7 +28843,7 @@ var showChatTemplate =
 	module.exports = ReactInjection;
 
 /***/ },
-/* 265 */
+/* 272 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -28847,11 +28861,11 @@ var showChatTemplate =
 
 	var _assign = __webpack_require__(6);
 
-	var CallbackQueue = __webpack_require__(187);
+	var CallbackQueue = __webpack_require__(194);
 	var PooledClass = __webpack_require__(8);
-	var ReactBrowserEventEmitter = __webpack_require__(233);
-	var ReactInputSelection = __webpack_require__(266);
-	var Transaction = __webpack_require__(192);
+	var ReactBrowserEventEmitter = __webpack_require__(240);
+	var ReactInputSelection = __webpack_require__(273);
+	var Transaction = __webpack_require__(199);
 
 	/**
 	 * Ensures that, when possible, the selection range (currently selected text
@@ -28996,7 +29010,7 @@ var showChatTemplate =
 	module.exports = ReactReconcileTransaction;
 
 /***/ },
-/* 266 */
+/* 273 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -29012,11 +29026,11 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactDOMSelection = __webpack_require__(267);
+	var ReactDOMSelection = __webpack_require__(274);
 
-	var containsNode = __webpack_require__(269);
-	var focusNode = __webpack_require__(219);
-	var getActiveElement = __webpack_require__(272);
+	var containsNode = __webpack_require__(276);
+	var focusNode = __webpack_require__(226);
+	var getActiveElement = __webpack_require__(279);
 
 	function isInDocument(node) {
 	  return containsNode(document.documentElement, node);
@@ -29125,7 +29139,7 @@ var showChatTemplate =
 	module.exports = ReactInputSelection;
 
 /***/ },
-/* 267 */
+/* 274 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -29143,8 +29157,8 @@ var showChatTemplate =
 
 	var ExecutionEnvironment = __webpack_require__(22);
 
-	var getNodeForCharacterOffset = __webpack_require__(268);
-	var getTextContentAccessor = __webpack_require__(181);
+	var getNodeForCharacterOffset = __webpack_require__(275);
+	var getTextContentAccessor = __webpack_require__(188);
 
 	/**
 	 * While `isCollapsed` is available on the Selection object and `collapsed`
@@ -29342,7 +29356,7 @@ var showChatTemplate =
 	module.exports = ReactDOMSelection;
 
 /***/ },
-/* 268 */
+/* 275 */
 /***/ function(module, exports) {
 
 	/**
@@ -29421,7 +29435,7 @@ var showChatTemplate =
 	module.exports = getNodeForCharacterOffset;
 
 /***/ },
-/* 269 */
+/* 276 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -29437,7 +29451,7 @@ var showChatTemplate =
 	 * 
 	 */
 
-	var isTextNode = __webpack_require__(270);
+	var isTextNode = __webpack_require__(277);
 
 	/*eslint-disable no-bitwise */
 
@@ -29465,7 +29479,7 @@ var showChatTemplate =
 	module.exports = containsNode;
 
 /***/ },
-/* 270 */
+/* 277 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -29481,7 +29495,7 @@ var showChatTemplate =
 	 * @typechecks
 	 */
 
-	var isNode = __webpack_require__(271);
+	var isNode = __webpack_require__(278);
 
 	/**
 	 * @param {*} object The object to check.
@@ -29494,7 +29508,7 @@ var showChatTemplate =
 	module.exports = isTextNode;
 
 /***/ },
-/* 271 */
+/* 278 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -29515,13 +29529,15 @@ var showChatTemplate =
 	 * @return {boolean} Whether or not the object is a DOM node.
 	 */
 	function isNode(object) {
-	  return !!(object && (typeof Node === 'function' ? object instanceof Node : typeof object === 'object' && typeof object.nodeType === 'number' && typeof object.nodeName === 'string'));
+	  var doc = object ? object.ownerDocument || object : document;
+	  var defaultView = doc.defaultView || window;
+	  return !!(object && (typeof defaultView.Node === 'function' ? object instanceof defaultView.Node : typeof object === 'object' && typeof object.nodeType === 'number' && typeof object.nodeName === 'string'));
 	}
 
 	module.exports = isNode;
 
 /***/ },
-/* 272 */
+/* 279 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -29545,22 +29561,26 @@ var showChatTemplate =
 	 *
 	 * The activeElement will be null only if the document or document body is not
 	 * yet defined.
+	 *
+	 * @param {?DOMDocument} doc Defaults to current document.
+	 * @return {?DOMElement}
 	 */
-	function getActiveElement() /*?DOMElement*/{
-	  if (typeof document === 'undefined') {
+	function getActiveElement(doc) /*?DOMElement*/{
+	  doc = doc || (typeof document !== 'undefined' ? document : undefined);
+	  if (typeof doc === 'undefined') {
 	    return null;
 	  }
 	  try {
-	    return document.activeElement || document.body;
+	    return doc.activeElement || doc.body;
 	  } catch (e) {
-	    return document.body;
+	    return doc.body;
 	  }
 	}
 
 	module.exports = getActiveElement;
 
 /***/ },
-/* 273 */
+/* 280 */
 /***/ function(module, exports) {
 
 	/**
@@ -29865,7 +29885,7 @@ var showChatTemplate =
 	module.exports = SVGDOMPropertyConfig;
 
 /***/ },
-/* 274 */
+/* 281 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -29881,17 +29901,17 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventConstants = __webpack_require__(172);
-	var EventPropagators = __webpack_require__(173);
+	var EventConstants = __webpack_require__(179);
+	var EventPropagators = __webpack_require__(180);
 	var ExecutionEnvironment = __webpack_require__(22);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactInputSelection = __webpack_require__(266);
-	var SyntheticEvent = __webpack_require__(183);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactInputSelection = __webpack_require__(273);
+	var SyntheticEvent = __webpack_require__(190);
 
-	var getActiveElement = __webpack_require__(272);
-	var isTextInputElement = __webpack_require__(195);
+	var getActiveElement = __webpack_require__(279);
+	var isTextInputElement = __webpack_require__(202);
 	var keyOf = __webpack_require__(33);
-	var shallowEqual = __webpack_require__(255);
+	var shallowEqual = __webpack_require__(262);
 
 	var topLevelTypes = EventConstants.topLevelTypes;
 
@@ -30066,7 +30086,7 @@ var showChatTemplate =
 	module.exports = SelectEventPlugin;
 
 /***/ },
-/* 275 */
+/* 282 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -30082,24 +30102,24 @@ var showChatTemplate =
 
 	'use strict';
 
-	var EventConstants = __webpack_require__(172);
-	var EventListener = __webpack_require__(262);
-	var EventPropagators = __webpack_require__(173);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var SyntheticAnimationEvent = __webpack_require__(276);
-	var SyntheticClipboardEvent = __webpack_require__(277);
-	var SyntheticEvent = __webpack_require__(183);
-	var SyntheticFocusEvent = __webpack_require__(278);
-	var SyntheticKeyboardEvent = __webpack_require__(279);
-	var SyntheticMouseEvent = __webpack_require__(198);
-	var SyntheticDragEvent = __webpack_require__(282);
-	var SyntheticTouchEvent = __webpack_require__(283);
-	var SyntheticTransitionEvent = __webpack_require__(284);
-	var SyntheticUIEvent = __webpack_require__(199);
-	var SyntheticWheelEvent = __webpack_require__(285);
+	var EventConstants = __webpack_require__(179);
+	var EventListener = __webpack_require__(269);
+	var EventPropagators = __webpack_require__(180);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var SyntheticAnimationEvent = __webpack_require__(283);
+	var SyntheticClipboardEvent = __webpack_require__(284);
+	var SyntheticEvent = __webpack_require__(190);
+	var SyntheticFocusEvent = __webpack_require__(285);
+	var SyntheticKeyboardEvent = __webpack_require__(286);
+	var SyntheticMouseEvent = __webpack_require__(205);
+	var SyntheticDragEvent = __webpack_require__(289);
+	var SyntheticTouchEvent = __webpack_require__(290);
+	var SyntheticTransitionEvent = __webpack_require__(291);
+	var SyntheticUIEvent = __webpack_require__(206);
+	var SyntheticWheelEvent = __webpack_require__(292);
 
 	var emptyFunction = __webpack_require__(13);
-	var getEventCharCode = __webpack_require__(280);
+	var getEventCharCode = __webpack_require__(287);
 	var invariant = __webpack_require__(9);
 	var keyOf = __webpack_require__(33);
 
@@ -30699,7 +30719,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 276 */
+/* 283 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -30715,7 +30735,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticEvent = __webpack_require__(183);
+	var SyntheticEvent = __webpack_require__(190);
 
 	/**
 	 * @interface Event
@@ -30743,7 +30763,7 @@ var showChatTemplate =
 	module.exports = SyntheticAnimationEvent;
 
 /***/ },
-/* 277 */
+/* 284 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -30759,7 +30779,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticEvent = __webpack_require__(183);
+	var SyntheticEvent = __webpack_require__(190);
 
 	/**
 	 * @interface Event
@@ -30786,7 +30806,7 @@ var showChatTemplate =
 	module.exports = SyntheticClipboardEvent;
 
 /***/ },
-/* 278 */
+/* 285 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -30802,7 +30822,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticUIEvent = __webpack_require__(199);
+	var SyntheticUIEvent = __webpack_require__(206);
 
 	/**
 	 * @interface FocusEvent
@@ -30827,7 +30847,7 @@ var showChatTemplate =
 	module.exports = SyntheticFocusEvent;
 
 /***/ },
-/* 279 */
+/* 286 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -30843,11 +30863,11 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticUIEvent = __webpack_require__(199);
+	var SyntheticUIEvent = __webpack_require__(206);
 
-	var getEventCharCode = __webpack_require__(280);
-	var getEventKey = __webpack_require__(281);
-	var getEventModifierState = __webpack_require__(201);
+	var getEventCharCode = __webpack_require__(287);
+	var getEventKey = __webpack_require__(288);
+	var getEventModifierState = __webpack_require__(208);
 
 	/**
 	 * @interface KeyboardEvent
@@ -30916,7 +30936,7 @@ var showChatTemplate =
 	module.exports = SyntheticKeyboardEvent;
 
 /***/ },
-/* 280 */
+/* 287 */
 /***/ function(module, exports) {
 
 	/**
@@ -30971,7 +30991,7 @@ var showChatTemplate =
 	module.exports = getEventCharCode;
 
 /***/ },
-/* 281 */
+/* 288 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -30987,7 +31007,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var getEventCharCode = __webpack_require__(280);
+	var getEventCharCode = __webpack_require__(287);
 
 	/**
 	 * Normalization of deprecated HTML5 `key` values
@@ -31078,7 +31098,7 @@ var showChatTemplate =
 	module.exports = getEventKey;
 
 /***/ },
-/* 282 */
+/* 289 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31094,7 +31114,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticMouseEvent = __webpack_require__(198);
+	var SyntheticMouseEvent = __webpack_require__(205);
 
 	/**
 	 * @interface DragEvent
@@ -31119,7 +31139,7 @@ var showChatTemplate =
 	module.exports = SyntheticDragEvent;
 
 /***/ },
-/* 283 */
+/* 290 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31135,9 +31155,9 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticUIEvent = __webpack_require__(199);
+	var SyntheticUIEvent = __webpack_require__(206);
 
-	var getEventModifierState = __webpack_require__(201);
+	var getEventModifierState = __webpack_require__(208);
 
 	/**
 	 * @interface TouchEvent
@@ -31169,7 +31189,7 @@ var showChatTemplate =
 	module.exports = SyntheticTouchEvent;
 
 /***/ },
-/* 284 */
+/* 291 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31185,7 +31205,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticEvent = __webpack_require__(183);
+	var SyntheticEvent = __webpack_require__(190);
 
 	/**
 	 * @interface Event
@@ -31213,7 +31233,7 @@ var showChatTemplate =
 	module.exports = SyntheticTransitionEvent;
 
 /***/ },
-/* 285 */
+/* 292 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31229,7 +31249,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var SyntheticMouseEvent = __webpack_require__(198);
+	var SyntheticMouseEvent = __webpack_require__(205);
 
 	/**
 	 * @interface WheelEvent
@@ -31272,7 +31292,7 @@ var showChatTemplate =
 	module.exports = SyntheticWheelEvent;
 
 /***/ },
-/* 286 */
+/* 293 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -31288,26 +31308,26 @@ var showChatTemplate =
 
 	'use strict';
 
-	var DOMLazyTree = __webpack_require__(205);
-	var DOMProperty = __webpack_require__(168);
-	var ReactBrowserEventEmitter = __webpack_require__(233);
+	var DOMLazyTree = __webpack_require__(212);
+	var DOMProperty = __webpack_require__(175);
+	var ReactBrowserEventEmitter = __webpack_require__(240);
 	var ReactCurrentOwner = __webpack_require__(11);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactDOMContainerInfo = __webpack_require__(287);
-	var ReactDOMFeatureFlags = __webpack_require__(288);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactDOMContainerInfo = __webpack_require__(294);
+	var ReactDOMFeatureFlags = __webpack_require__(295);
 	var ReactElement = __webpack_require__(10);
-	var ReactFeatureFlags = __webpack_require__(188);
+	var ReactFeatureFlags = __webpack_require__(195);
 	var ReactInstrumentation = __webpack_require__(20);
-	var ReactMarkupChecksum = __webpack_require__(289);
-	var ReactReconciler = __webpack_require__(189);
-	var ReactUpdateQueue = __webpack_require__(250);
-	var ReactUpdates = __webpack_require__(186);
+	var ReactMarkupChecksum = __webpack_require__(296);
+	var ReactReconciler = __webpack_require__(196);
+	var ReactUpdateQueue = __webpack_require__(257);
+	var ReactUpdates = __webpack_require__(193);
 
 	var emptyObject = __webpack_require__(28);
-	var instantiateReactComponent = __webpack_require__(246);
+	var instantiateReactComponent = __webpack_require__(253);
 	var invariant = __webpack_require__(9);
-	var setInnerHTML = __webpack_require__(210);
-	var shouldUpdateReactComponent = __webpack_require__(251);
+	var setInnerHTML = __webpack_require__(217);
+	var shouldUpdateReactComponent = __webpack_require__(258);
 	var warning = __webpack_require__(12);
 
 	var ATTR_NAME = DOMProperty.ID_ATTRIBUTE_NAME;
@@ -31771,7 +31791,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 287 */
+/* 294 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -31787,7 +31807,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var validateDOMNesting = __webpack_require__(256);
+	var validateDOMNesting = __webpack_require__(263);
 
 	var DOC_NODE_TYPE = 9;
 
@@ -31810,7 +31830,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 288 */
+/* 295 */
 /***/ function(module, exports) {
 
 	/**
@@ -31833,7 +31853,7 @@ var showChatTemplate =
 	module.exports = ReactDOMFeatureFlags;
 
 /***/ },
-/* 289 */
+/* 296 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -31849,7 +31869,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var adler32 = __webpack_require__(290);
+	var adler32 = __webpack_require__(297);
 
 	var TAG_END = /\/?>/;
 	var COMMENT_START = /^<\!\-\-/;
@@ -31888,7 +31908,7 @@ var showChatTemplate =
 	module.exports = ReactMarkupChecksum;
 
 /***/ },
-/* 290 */
+/* 297 */
 /***/ function(module, exports) {
 
 	/**
@@ -31936,7 +31956,7 @@ var showChatTemplate =
 	module.exports = adler32;
 
 /***/ },
-/* 291 */
+/* 298 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {/**
@@ -31953,10 +31973,10 @@ var showChatTemplate =
 	'use strict';
 
 	var ReactCurrentOwner = __webpack_require__(11);
-	var ReactDOMComponentTree = __webpack_require__(167);
-	var ReactInstanceMap = __webpack_require__(248);
+	var ReactDOMComponentTree = __webpack_require__(174);
+	var ReactInstanceMap = __webpack_require__(255);
 
-	var getNativeComponentFromComposite = __webpack_require__(292);
+	var getNativeComponentFromComposite = __webpack_require__(299);
 	var invariant = __webpack_require__(9);
 	var warning = __webpack_require__(12);
 
@@ -32000,7 +32020,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 292 */
+/* 299 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -32016,7 +32036,7 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactNodeTypes = __webpack_require__(249);
+	var ReactNodeTypes = __webpack_require__(256);
 
 	function getNativeComponentFromComposite(inst) {
 	  var type;
@@ -32035,7 +32055,7 @@ var showChatTemplate =
 	module.exports = getNativeComponentFromComposite;
 
 /***/ },
-/* 293 */
+/* 300 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -32051,12 +32071,12 @@ var showChatTemplate =
 
 	'use strict';
 
-	var ReactMount = __webpack_require__(286);
+	var ReactMount = __webpack_require__(293);
 
 	module.exports = ReactMount.renderSubtreeIntoContainer;
 
 /***/ },
-/* 294 */
+/* 301 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -32183,7 +32203,7 @@ var showChatTemplate =
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 295 */
+/* 302 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/**
@@ -32201,7 +32221,7 @@ var showChatTemplate =
 
 	var ExecutionEnvironment = __webpack_require__(22);
 
-	var getVendorPrefixedEventName = __webpack_require__(235);
+	var getVendorPrefixedEventName = __webpack_require__(242);
 
 	var endEvents = [];
 
@@ -32261,7 +32281,7 @@ var showChatTemplate =
 	module.exports = ReactTransitionEvents;
 
 /***/ },
-/* 296 */
+/* 303 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -32320,7 +32340,7 @@ var showChatTemplate =
 	exports.default = Typing;
 
 /***/ },
-/* 297 */
+/* 304 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -32376,12 +32396,12 @@ var showChatTemplate =
 	exports.default = ImageLoader;
 
 /***/ },
-/* 298 */
+/* 305 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	module.exports = __webpack_require__(166);
+	module.exports = __webpack_require__(173);
 
 
 /***/ }
